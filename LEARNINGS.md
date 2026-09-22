@@ -277,3 +277,63 @@ Run them unsandboxed, or trust CI, which runs the same 43 on Ubuntu.
   note never claimed anything about it, and inventing the claim during a
   sweep would harden today's output into a rule. Recorded in HANDOFF instead,
   with the trigger that would justify asserting it.
+
+## 2026-09-22 (later) — an external review found two live boundary defects
+
+An external pass (Codex) raised four findings. Each was reproduced before
+being accepted; all four held, and one was worse than reported.
+
+### Cancellation was wired to an event that never fires
+
+- **`req.on('close')` does not fire after the body has been read.** The
+  handler consumed the request with `readBody()`, then attached a `close`
+  listener to the `IncomingMessage`. By then that object is already complete
+  and its own close has fired, so the listener never ran: a cancelled fetch
+  left the 101-question evaluation running to completion and billing.
+  Reproduced with a real client abort — the signal stayed unset.
+- **`res.on('close')` with `!res.writableEnded` is the correct pair.** It
+  fires on both outcomes, and `writableEnded` separates a dropped connection
+  from a served one. Measured in the same harness: `res.close` true,
+  `socket.close` true, `req.close` false, `req.aborted` false.
+- **The comment was right and the code was wrong.** LEARNINGS already
+  recorded "a capability that exists but is not wired". It was wired — to the
+  wrong wire, which reads identically in review. Only a client that actually
+  hangs up shows the difference.
+
+### Same-origin serving is not a spending boundary
+
+- **A cross-origin `text/plain` POST is a simple request.** No preflight, so
+  the browser sends it. The attacker cannot read the reply, but the model call
+  runs and bills. Reproduced against the endpoint as written: status 200, the
+  request reached the call site.
+- **The content-type requirement is the load-bearing half.**
+  `application/json` is not on the simple-request list, so requiring it forces
+  a preflight that CORS blocks — that holds against an Origin nobody
+  predicted. The Origin check is defence in depth behind it.
+- **An absent `Origin` has to pass.** Same-origin GETs and non-browser clients
+  send none, and they carry no ambient credentials for another site to abuse.
+  Rejecting on absence would break curl and the app's own GETs while stopping
+  nothing.
+
+### A concluded experiment left a bypass switch
+
+- **`SIFT_PROMPT=repeated` reverted the prompt-injection boundary**, and the
+  test guarding it went red whenever that variable was set. The experiment had
+  concluded months of tokens earlier; only the switch survived. Removed the
+  type, the accessor and the old builder, so the boundary is structural.
+  Verified by running the whole suite with the variable set: 45 pass, where it
+  previously turned that test red.
+
+### Documentation
+
+- **Two comments in one file contradicted each other**, and the wrong one sat
+  on the public type: `timeoutMs` was documented as "one attempt" while the
+  implementation twenty lines down applies it to the whole retry chain.
+- **A stale claim outlived the code it described in four places**, one of
+  which the review did not list — "interpolated five times per emoji" survived
+  in a test comment after the prompt shape that did it was deleted. Grep for
+  the claim, not the file.
+- **A handoff should not restate the head commit.** It was wrong by four
+  commits. The value is authoritative in git and the file already carries a
+  tripwire that detects staleness; a copied hash only adds something to get
+  wrong.

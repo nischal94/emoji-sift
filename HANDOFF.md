@@ -33,7 +33,9 @@ doing the judging is `typesafe-ai/jev` through Vercel AI Gateway.
 ## Current state (2026-09-22)
 
 Working end to end. Public at https://github.com/nischal94/emoji-sift,
-head `8eb70cf` on `main`.
+on `main`. For the current head run `git log -1 --format=%h`: a hash written
+here goes stale on the next commit, and the tripwire above already detects
+that better than a copied value does.
 
 **Pushing to `main` is blocked by a global hook.** A push needs
 `ALLOW_MAIN_PUSH=1 git push` run by the user; the agent commits but never
@@ -43,10 +45,10 @@ pushes (`.claude/settings.json` denies it).
 | --- | --- |
 | Jev integration | Working. 101 score questions in one request, ~14,780 tokens |
 | Ranking | Pure, tested. Floor 1.5, limit 12, tie-break on pile order |
-| Server | Node http, key server-side, loopback only, 4 concurrent max |
+| Server | Node http, key server-side, loopback only, 4 concurrent max. JSON content-type and same-host Origin required |
 | UI | Input, row, pile. Fly-up and fall-back both land at 0px error |
 | Acceptance set | 10 queries. Last run **8 passed / 0 failed / 2 unavailable** |
-| Tests | 43 passing. Typecheck and lint clean |
+| Tests | 55 passing. Typecheck and lint clean |
 | CI | **Green.** `.github/workflows/ci.yml`, ~45s on `ubuntu-latest`, no warnings |
 
 ### How to run it
@@ -154,6 +156,11 @@ questions below and write the answers down; implement after.
    score questions, ~14,780 tokens. Decide the per-IP window and what a
    rejected caller sees. `MAX_BODY_BYTES` (4 KiB) already caps payload size;
    it does not cap spend.
+
+   The cross-origin half of this is now closed — `src/request-guard.ts`
+   requires `application/json` and rejects a foreign `Origin`, so another
+   site cannot spend the key from a visitor's browser. A direct client such
+   as a script is unaffected by that and is what per-IP limiting is for.
 3. **Idle-fire.** `IDLE_MS = 1200` in `web/app.js:242` fires a request 1200ms
    after typing stops. Free while promotional pricing lasts, and that
    **ends 2026-09-25** — three days after this was written, so check whether

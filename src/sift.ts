@@ -22,7 +22,12 @@ export type SiftOptions = {
   limit?: number;
   floor?: number;
   pile?: readonly Emoji[];
-  /** Budget for one attempt, not for the whole retry sequence. */
+  /**
+   * Deadline for the whole operation, retries included — not for one attempt.
+   * It has to be long enough to contain the retry chain: a value sized for a
+   * single call cancels the retries mid-backoff, which surfaces as "Delay was
+   * aborted" rather than as a timeout.
+   */
   timeoutMs?: number;
   /** Lets a caller cancel in-flight work, such as a superseded keystroke. */
   signal?: AbortSignal;
@@ -61,10 +66,16 @@ export const RETRIES_DIAGNOSTIC = 1;
 export const RETRIES_BENCH = 5;
 
 /**
- * Longest query accepted. The query is interpolated five times per emoji, so
- * length is multiplied by ~500 in the request body: a 5,000-character query
- * builds a 2.5 MB payload against a free-tier endpoint. 200 characters is well
- * past any real phrase and keeps the payload bounded.
+ * Longest query accepted.
+ *
+ * The query now travels in shared state and is sent once, so length no longer
+ * multiplies across the pile — a test asserts the payload does not grow with
+ * it. The cap stays as the outer bound on what reaches the model at all, and
+ * 200 characters is well past any real phrase.
+ *
+ * It mattered more under the earlier prompt shape, which named the query in
+ * every criteria level: ~500 copies, so a 5,000-character query built a 2.5 MB
+ * payload. That shape is gone.
  */
 export const MAX_QUERY_LENGTH = 200;
 
