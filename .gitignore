@@ -7,7 +7,7 @@ node_modules/
 *.log
 .DS_Store
 
-# Reference video for the interaction this rebuilds; not ours to redistribute.
+# Video files are not ours to redistribute.
 *.mp4
 
 # Local tool state.

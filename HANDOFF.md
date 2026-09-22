@@ -26,9 +26,8 @@ rewrite this file first, then proceed.
 
 ## What this is
 
-A rebuild of [Stefan's Jev demo](https://x.com/heystefan_/status/2101369117496521042):
-type a description, the matching emoji fly out of a pile into a row. The model
-doing the judging is `typesafe-ai/jev` through Vercel AI Gateway.
+Type a description, and the matching emoji fly out of a pile into a row. The
+model doing the judging is `typesafe-ai/jev` through Vercel AI Gateway.
 
 ## Current state (2026-09-22)
 
@@ -180,12 +179,10 @@ reader does not redo the reasoning:
 
 ### 1. NEXT TASK — scope the deployment
 
-The build already matches the reference. Frame-by-frame against the video in
-`~/projects/jev/s2ygWn-SPWBDHupm.mp4` (32.7s): input with a clear button, the
-pile, the fly-up row, the fall-back. Same three queries. Nothing in it is
-missing here. **Note the URL bar in that video — `127.0.0.1:5174`. The
-reference is a localhost demo, never a deployed product**, so "go live" is not
-catching up to it. It is solving what a one-laptop demo never had to.
+The feature work is finished: input with a clear button, the pile, the fly-up
+row, the fall-back. Nothing is missing from the interaction. **What remains is
+everything a localhost-only build never had to solve** — going live is not
+more features, it is hosting, abuse limits and a cost ceiling.
 
 **This task is a decision document, not an implementation.** Answer the five
 questions below and write the answers down; implement after.

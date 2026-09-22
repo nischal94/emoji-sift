@@ -16,9 +16,9 @@ what we learned (appended, never silently rewritten).
 
 ## 2026-09-21 to 09-22 — Jev integration, UI, and three rounds of review
 
-**Shipped:** a working rebuild of Stefan's emoji demo. One Jev request ranks
-101 emoji against a typed query; matching emoji animate out of a pile into a
-row. 38 tests, a 10-query acceptance set at 9 passed / 0 failed.
+**Shipped:** a working emoji search. One Jev request ranks 101 emoji against a
+typed query; matching emoji animate out of a pile into a row. 38 tests, a
+10-query acceptance set at 9 passed / 0 failed.
 
 ### Jev — what it is and is not
 

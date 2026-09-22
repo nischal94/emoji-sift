@@ -30,9 +30,9 @@ test('ids are safe as object keys', () => {
 });
 
 test('names read as plain nouns, not property descriptions', () => {
-  // The demo's claim is that Jev reasons about objects rather than matching
-  // words we planted. A name carrying the answer ("magnetic key") would make
-  // the magnet query pass for the wrong reason.
+  // The claim this project rests on is that Jev reasons about objects rather
+  // than matching words we planted. A name carrying the answer ("magnetic
+  // key") would make the magnet query pass for the wrong reason.
   for (const e of EMOJI) {
     assert.ok(e.name.length > 0, `${e.id} needs a name`);
     assert.equal(e.name, e.name.toLowerCase(), `${e.name} should be lowercase`);

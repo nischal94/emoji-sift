@@ -98,7 +98,3 @@ struggling that is worth seeing.
 ```bash
 pnpm run check   # typecheck, lint, tests
 ```
-
-## Credit
-
-The interaction is a rebuild of [a demo by Stefan](https://x.com/heystefan_/status/2101369117496521042).
