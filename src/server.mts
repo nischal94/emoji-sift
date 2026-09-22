@@ -9,6 +9,7 @@ import {
   RETRIES_INTERACTIVE,
 } from './sift.ts';
 
+import { abortOnDisconnect } from './disconnect.ts';
 import { requireGatewayKey } from './env.ts';
 
 requireGatewayKey();
@@ -94,11 +95,7 @@ async function handleSift(
     return json(res, 429, { error: 'Too many requests in flight. Try again.' });
   }
 
-  // The browser aborts its fetch on every new keystroke batch. Without this,
-  // the disconnect is invisible here and the 101-question evaluation runs to
-  // completion and bills, for a result nobody will read.
-  const disconnected = new AbortController();
-  req.on('close', () => disconnected.abort());
+  const disconnected = abortOnDisconnect(req, res);
 
   inFlight++;
   try {
