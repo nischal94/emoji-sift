@@ -10,6 +10,7 @@ import {
 } from './sift.ts';
 
 import { abortOnDisconnect } from './disconnect.ts';
+import { checkSiftRequest } from './request-guard.ts';
 import { requireGatewayKey } from './env.ts';
 
 requireGatewayKey();
@@ -33,9 +34,17 @@ let inFlight = 0;
 
 /**
  * The key stays here and never reaches the browser: the page posts a query
- * and gets back the ranked row. Serving the page from the same origin keeps
- * the fetch same-origin, so no CORS headers are needed and no other site can
- * spend this key from a visitor's browser.
+ * and gets back the ranked row.
+ *
+ * Same-origin serving means the app's own fetch needs no CORS headers. It does
+ * NOT stop another site from spending the key — a cross-origin `text/plain`
+ * POST is a simple request and is sent without a preflight, so the attacker
+ * cannot read the reply but the model call still bills. `checkSiftRequest`
+ * is what closes that; see `request-guard.ts`.
+ *
+ * Still missing for a public deployment: per-IP rate limiting and a spending
+ * ceiling. The concurrency cap below is global, so it bounds simultaneous
+ * cost, not total cost.
  */
 const server = createServer((req, res) => {
   void handle(req, res).catch((error: unknown) => {
@@ -72,6 +81,12 @@ async function handleSift(
   req: IncomingMessage,
   res: ServerResponse,
 ): Promise<void> {
+  // Before the body is read, so a request from another site costs nothing.
+  const refusal = checkSiftRequest(req.headers);
+  if (refusal) {
+    return json(res, refusal.status, { error: refusal.error });
+  }
+
   let raw: string;
   try {
     raw = await readBody(req);
