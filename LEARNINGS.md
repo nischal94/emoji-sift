@@ -111,3 +111,21 @@ row. 38 tests, a 10-query acceptance set at 9 passed / 0 failed.
 - **The timeout covers the whole retry chain, not one attempt.** A 15-second
   deadline with four retries meant the retries could never all run; the symptom
   was "Delay was aborted", which reads nothing like a timeout.
+
+### The fall-back animation (added 2026-09-22)
+
+- **A reset and a movement cannot share a code path.** The lift resets every
+  emoji with `transition: none` before measuring, which is correct: the reset
+  must not animate. Applying that same reset to emoji LEAVING the row made them
+  teleport home, because for them the reset IS the movement. Emoji leaving now
+  clear their transform with the transition intact; only the ones about to be
+  measured get suppressed.
+- **"Lands in the right place" and "animates" are separate claims.** Geometry
+  checks passed at 0px error while the return was instant, because a teleport
+  ends at the correct coordinates too. Verifying motion means sampling position
+  MID-flight: at 150ms the emoji must still be between its two endpoints.
+- **Test through the real handler, not a re-simulation.** An earlier check
+  re-implemented `layout()` in the console and would have passed against code
+  that was broken in the app, since the bug lived in the branch the
+  re-simulation did not reproduce. Driving the actual click handler is what
+  caught it.

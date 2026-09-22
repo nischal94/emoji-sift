@@ -44,7 +44,7 @@ pushes (`.claude/settings.json` denies it).
 | Jev integration | Working. 101 score questions in one request, ~14,780 tokens |
 | Ranking | Pure, tested. Floor 1.5, limit 12, tie-break on pile order |
 | Server | Node http, key server-side, loopback only, 4 concurrent max |
-| UI | Input, row, pile. Fly-up animation lands exactly on target |
+| UI | Input, row, pile. Fly-up and fall-back both land at 0px error |
 | Acceptance set | 10 queries, **9 passed / 0 failed / 1 unavailable** |
 | Tests | 38 passing. Typecheck and lint clean |
 | CI | **Not set up** — `.github/workflows/ci.yml` still to be created |
@@ -82,7 +82,7 @@ pnpm run sift "things you can wear"
 - Query normalization: length cap, control/format characters, quote handling
 - Server with the key held server-side, body cap, concurrency cap, abort
   plumbed through so a cancelled keystroke stops the upstream call
-- Fly-up animation, verified to land within 0px of its target
+- Fly-up and fall-back animation, both verified at 0px landing error
 - 38 tests, each written against a defect that actually occurred
 - Acceptance set with `must` / `mustNot` / `outranks`
 - Two audits and one external review, all findings closed
@@ -95,18 +95,13 @@ pnpm run sift "things you can wear"
 `AI_GATEWAY_API_KEY` in CI: the tests are pure, and model behaviour belongs in
 `pnpm run bench`, which a person runs and reads.
 
-### 2. The fall-back animation
-
-Built but never watched. Clearing the input should return every lifted emoji to
-its pile position.
-
-### 3. 🔑 key in both band queries
+### 2. 🔑 key in both band queries
 
 Scores above the floor for "start a band" and "instruments you could play in a
 band" — a musical-key pun, same shape as 🪨 rock. Not a failure; add to
 `outranks` if it looks wrong in the UI.
 
-### 4. Deployment, if it ever goes public
+### 3. Deployment, if it ever goes public
 
 The server is loopback-only and has no auth or rate limiting beyond a
 concurrency cap. Before exposing it: per-IP limits, and decide whether

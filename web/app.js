@@ -87,18 +87,30 @@ function layout(matches) {
 
   const slots = [...row.children];
 
-  // Phase 1 — put every emoji back in its resting state, without animating.
-  // A node still carrying a transform measures where it currently sits, not
-  // where it rests, so the new offset has to be computed from a clean start.
-  for (const node of pileNodes.values()) {
+  // Emoji leaving the row fall home, and that fall is the animation. Clearing
+  // their transform WITH the transition intact is what makes them travel;
+  // suppressing it here would teleport them back.
+  for (const [id, node] of pileNodes) {
+    if (lifted.has(id) && !nextLifted.has(id)) {
+      node.classList.remove('lifted');
+      node.style.transitionDelay = '0ms';
+      node.style.transform = '';
+    }
+  }
+
+  // Phase 1 — reset only the emoji that are about to be measured. A node
+  // still carrying a transform measures where it currently sits rather than
+  // where it rests, so the new offset has to be computed from a clean start,
+  // and that reset must not itself animate.
+  for (const id of nextLifted) {
+    const node = pileNodes.get(id);
+    if (!node) continue;
     node.style.transition = 'none';
     node.style.transform = '';
     node.style.transitionDelay = '0ms';
-  }
-  // Size is part of position: the emoji grows to row size, and measuring it
-  // at pile size aims the centre-to-centre offset with the wrong width.
-  for (const [id, node] of pileNodes) {
-    node.classList.toggle('lifted', nextLifted.has(id));
+    // Size is part of position: the emoji grows to row size, and measuring it
+    // at pile size aims the centre-to-centre offset with the wrong width.
+    node.classList.add('lifted');
   }
 
   // Phase 2 — one forced reflow, then every rect below is current.
@@ -124,7 +136,10 @@ function layout(matches) {
   // Phase 3 — restore transitions and apply, on the next frame so the
   // browser does not collapse the reset and the move into one step.
   requestAnimationFrame(() => {
-    for (const node of pileNodes.values()) node.style.transition = '';
+    for (const id of nextLifted) {
+      const node = pileNodes.get(id);
+      if (node) node.style.transition = '';
+    }
     for (const { node, index, dx, dy } of moves) {
       // Stagger by row position rather than by pile position: the row fills
       // left to right, which is the order a reader's eye follows.
