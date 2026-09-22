@@ -54,10 +54,10 @@ no longer wanted. Neither was pushed.
 | --- | --- |
 | Jev integration | Working. 101 score questions in one request, ~14,780 tokens |
 | Ranking | Pure, tested. Floor 1.5, limit 12, tie-break on pile order |
-| Server | Node http, key server-side, loopback only, 4 concurrent max. JSON content-type and same-host Origin required |
+| Server | Node http, key server-side, loopback only, 4 concurrent max. JSON content-type and same-host Origin required. Caches the last 200 answers |
 | UI | Input, row, pile. Fly-up and fall-back both land at 0px error |
 | Acceptance set | 10 queries. Last run **8 passed / 0 failed / 2 unavailable** |
-| Tests | 62 total. **57 pass in the agent sandbox, 5 cannot run there** — see below. Typecheck and lint clean |
+| Tests | 72 total. **67 pass in the agent sandbox, 5 cannot run there** — see below. Typecheck and lint clean |
 | CI | **Green**, every run so far. `.github/workflows/ci.yml`, ~30s on `ubuntu-latest`, no warnings |
 
 ### How to run it
@@ -90,8 +90,8 @@ pnpm run sift "things you can wear"
 - **An agent cannot run `pnpm run bench`.** It needs the key in `.env`, which
   the sandbox denies reading. A person runs it and pastes the output.
 - **Five tests fail in the agent sandbox and none of them is a defect.**
-  Measured 2026-09-22 at 57 pass / 5 fail; unsandboxed and in CI the suite is
-  62/62. Do not go bug-hunting, and do not accept a *sixth* failure as more of
+  Measured 2026-09-22 at 67 pass / 5 fail; unsandboxed and in CI the suite is
+  72/72. Do not go bug-hunting, and do not accept a *sixth* failure as more of
   the same — the five are named, and anything else is real:
   - `a cancelled fetch aborts the work in flight`
   - `a client that waits is not treated as a disconnect`
@@ -130,7 +130,12 @@ pnpm run sift "things you can wear"
 - Server with the key held server-side, body cap, concurrency cap, abort
   plumbed through so a cancelled keystroke stops the upstream call
 - Fly-up and fall-back animation, both verified at 0px landing error
-- 62 tests, each written against a defect that actually occurred
+- 72 tests, each written against a defect that actually occurred
+- Server-side result cache — `src/result-cache.ts`, last 200 answers keyed on
+  the normalized query. Shared by every client and survives a page reload,
+  unlike the per-tab `Map` in `web/app.js`. A repeated query costs nothing and
+  returns instantly, which is what makes a demo recording practical while Jev
+  is slow
 - Acceptance set with `must` / `mustNot` / `outranks`
 - Two audits and two external reviews, all findings closed
 - CI on push and PR, verified green on a clean runner
@@ -254,6 +259,13 @@ Queries that show why the model is needed, because keyword search cannot do
 them: `things a magnet could attract`, `i need to lose weight`,
 `things you can wear`, `start a band`.
 
+**The latency problem is solved for recording purposes.** The server cache
+added 2026-09-22 means a query only ever waits once per server process. Warm
+the three demo queries, then record: each returns instantly with the full
+fly-up animation and no "cached" label on screen, because the server replays
+the original response including its `ms` value. A page reload no longer costs
+anything. Restarting the server does — the cache is in memory by design.
+
 **Then, in order:** record if it is responsive → decide deployment with item 1
 reopened → the deployment work itself, already scoped in DEPLOYMENT.md.
 
@@ -332,7 +344,7 @@ by the warning disappearing from run #4, not by the run merely passing.
 >
 > Confirm the tree first, using the direct-binary commands under "Environment
 > gotchas" rather than `pnpm run check`. Expected: typecheck 0, lint 0, and
-> 57 pass / 5 fail where the five are exactly the named sandbox cases. A sixth
+> 67 pass / 5 fail where the five are exactly the named sandbox cases. A sixth
 > failure, or a different name, is a real regression.
 >
 > Read CLAUDE.md before the first commit, not after.

@@ -180,3 +180,40 @@ queries, not a bench, so it refines the picture rather than replacing it.
 **Effect on recording: record now, but expect retakes.** A 35s wait is unusable
 in a demo; a 5s wait is fine. The queries return correct results every time, so
 retaking until a fast run lands is a workable approach today.
+
+---
+
+## A server-side cache, added 2026-09-22 after the live run
+
+`src/result-cache.ts` holds the last 200 responses keyed on the normalized
+query. Built to make a demo recording practical against a slow model; it also
+changes two of the questions above.
+
+**Question 2, rate limiting — the cache is not a substitute.** It removes the
+spend for a *repeated* query, which is the common case for a demo and a shared
+link, and does nothing about a caller sending endlessly distinct queries. That
+is exactly what per-IP limiting is for, so question 2 stands unchanged. The
+cache does lower the expected bill for ordinary traffic, because a popular
+query is paid for once per process rather than once per visitor.
+
+**Question 3, idle-fire — partially relieved.** Typing forward still produces
+a distinct query per prefix, so the first pass through a sentence costs the
+same. But every prefix anyone has already typed is now free, so a second
+visitor typing the same phrase pays nothing. It does not remove the reason to
+decide question 3; it lowers the stakes.
+
+**What it deliberately does not do:**
+
+- **No TTL.** The model's answer to "things you can wear" does not go stale on
+  a clock, and an expiry would reintroduce the wait unpredictably. Restarting
+  the server is the way to clear it.
+- **No disk persistence.** A process restart empties it. That keeps the
+  failure mode obvious and avoids a stale answer surviving a deploy.
+- **Nothing stored on failure.** A cancelled or failed evaluation leaves no
+  entry, so a 503 is never cached and replayed.
+
+Measured after the change, on a restarted server: `things you can wear` took
+1416ms cold, `i need to lose weight` 1350ms, `things a magnet could attract`
+3638ms. After a full page reload all three returned instantly from the server
+cache. One genuine 503 occurred during warm-up and was correctly not cached —
+the retry succeeded.
