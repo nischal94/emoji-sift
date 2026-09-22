@@ -149,3 +149,34 @@ the sandbox denies reading. Verified again 2026-09-22 — the file exists on
 disk and reads as absent inside the sandbox. A person runs it and pastes the
 output; the two numbers under "What would flip this decision" are what to
 read from it.
+
+---
+
+## Live measurement, 2026-09-22 ~16:40 IST
+
+Driven through the browser against a running dev server, not `pnpm run bench`.
+Three queries, all correct, none failed.
+
+| Query | Result | Time |
+| --- | --- | --- |
+| `things you can wear` | 12 of 101 — jeans, sock, scarf, gloves, sunglasses, shirt, boot, ring, hat, crown | **4.9s** |
+| `i need to lose weight` | 4 of 101 — broccoli, apple, egg, basketball | **34.8s** |
+| `things a magnet could attract` | 12 of 101 — paperclip, pushpin, key, safety pin, scissors, wrench, screwdriver, lock, coin, compass, hammer | **17.9s** |
+
+**0 failures in 3 queries**, which is better than the 20–40% loss rate the
+benches measured earlier the same day. **Latency is the problem, not
+availability:** 4.9s, 17.9s, 34.8s. The `still sifting — the model is busy…`
+notice fired on the two slow ones and did its job, and the previous row stayed
+on screen throughout rather than blanking.
+
+Every feature the reference video shows was verified working in the same pass:
+the pile, the fly-up, the results row, the `×` clear and the fall-back.
+
+**Effect on the launch decision: unchanged, "not yet".** A median wait near 18s
+is not a public experience, and the reopen thresholds in this document name
+"under ~15s" as acceptable. Two of three runs missed that. The sample is three
+queries, not a bench, so it refines the picture rather than replacing it.
+
+**Effect on recording: record now, but expect retakes.** A 35s wait is unusable
+in a demo; a 5s wait is fine. The queries return correct results every time, so
+retaking until a fast run lands is a workable approach today.
