@@ -236,6 +236,10 @@ sandbox refuses to delete any file named `.env`, including ones the test just
 created in a temp directory. The assertions pass; the cleanup is what fails.
 Run them unsandboxed, or trust CI, which runs the same 43 on Ubuntu.
 
+> Superseded 2026-09-22: measured at 62 tests, and the count and the cause
+> were both incomplete. Five cases fail under the sandbox, not three, through
+> three distinct denials — see the entry for this date below.
+
 ### The acceptance set had its own false green
 
 - **A note that states a standard is not an assertion.** "instruments you
@@ -379,3 +383,69 @@ being accepted; all four held, and one was worse than reported.
   matches what it should, then confirm no currently tracked file is caught by
   one — a rule shadowing a tracked file produces staging behaviour nobody can
   explain months later.
+
+---
+
+## 2026-09-22 (later still) — the deployment decision, and a test suite that is neither green nor red
+
+**Shipped:** `DEPLOYMENT.md`, answering the five scoping questions. No code
+changed; the decision was the deliverable.
+
+### Five failing tests, zero defects, and why both halves matter
+
+The session opened by running the suite and getting 57 pass / 5 fail against a
+handoff claiming 62 passing. Neither "the tree is red" nor "the tree is green"
+was true, and either would have cost the next session real time — the first by
+sending it hunting a bug that does not exist, the second by hiding a future
+regression in accepted noise.
+
+- **Three distinct sandbox denials, not one.** The earlier entry recorded only
+  the unlink case. Measured this session:
+  - `server.listen(…, '127.0.0.1')` → `EPERM`. The sandbox allows outbound
+    connections through the proxy and refuses to bind a listener, so both
+    `disconnect.test.ts` cases die before any assertion runs.
+  - `unlinkSync('…/.env')` → `EPERM`, in the `finally` cleanup of
+    `env.test.ts`. Assertions have already passed at that point.
+  - The probe subprocess cannot **read** the `.env` it just wrote, so the
+    readable case exits non-zero and its assertion fails for a third reason.
+- **Writing `.env` is permitted; deleting and reading it are not.** Probed
+  directly rather than inferred: both a `.env` and a plain file wrote fine in
+  `$TMPDIR`. Only the unlink and the read are refused. That asymmetry is why
+  the failure presents as a cleanup error rather than a write error, and it is
+  what makes the cause non-obvious from the message.
+- **Isolating the assertions from the harness is what proved it.** Wrapping
+  the single `rmSync` in try/catch turned 3 of the 5 green immediately. That
+  is the evidence that the code under test is sound — an argument from the
+  error message alone would have been a guess.
+- **`node --test … | tail` hides the exit code**, again. Recorded in this file
+  already; repeated here because it cost another minute. The count lines are
+  the artifact to read, never the pipeline's status.
+
+### A green CI run is not a test count
+
+Confirmed run #14 on head `6960e96` reports Status Success with one job and
+one annotation (the Ubuntu 26 notice already tracked). The per-step log body
+would not render in the browser pane and the API fetch is blocked by network
+policy, so **the 62/0 figure is carried from the local run, not from CI.**
+Stating which artifact a number came from is the difference between evidence
+and a number that sounds like evidence.
+
+### The handoff claimed unbuilt work that was already built
+
+Question 5 named "a loading state and an honest error path" as the launch
+minimum. Both were already in `web/app.js`: a `sifting…` status, an
+escalation at 6000ms, the server's 503 text surfaced verbatim, and a
+per-session cache. **A scoping question inherited from an earlier session
+still has to be checked against the code before it is answered** — otherwise
+the answer scopes work that does not exist, and the real blocker stays
+unexamined behind it.
+
+### The decision itself
+
+Not launching yet, on evidence that is upstream and unfixable from here:
+20–40% of queries lost to 503s *after* six retries, response times to 68s, no
+fallback provider. The promotional pricing that plausibly drives the load ends
+2026-09-25, three days out, so waiting costs nothing and is the most likely
+fix. Question 4 — a spend ceiling at the Gateway — is the one item worth doing
+regardless, because it is configured outside this repository and therefore
+survives any defect introduced inside it.
