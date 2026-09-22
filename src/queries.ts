@@ -99,8 +99,12 @@ export const QUERIES: SavedQuery[] = [
     text: 'instruments you could play in a band',
     note:
       'The same intent stated without the pun. 🪨 has no reading here, so ' +
-      'its presence would be a real failure rather than a defensible one.',
+      'its presence would be a real failure rather than a defensible one. ' +
+      '🔑 key is the other pun and does appear: a key is a tonal centre, ' +
+      'which is band vocabulary but not an instrument you could play, so the ' +
+      'instruments have to outrank it.',
     must: ['guitar', 'drum', 'trumpet'],
     mustNot: ['rock', 'pizza', 'hammer'],
+    outranks: ['key'],
   },
 ];

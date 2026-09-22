@@ -45,7 +45,7 @@ pushes (`.claude/settings.json` denies it).
 | Ranking | Pure, tested. Floor 1.5, limit 12, tie-break on pile order |
 | Server | Node http, key server-side, loopback only, 4 concurrent max |
 | UI | Input, row, pile. Fly-up and fall-back both land at 0px error |
-| Acceptance set | 10 queries. Last run **6 passed / 0 failed / 4 unavailable** |
+| Acceptance set | 10 queries. Last run **8 passed / 0 failed / 2 unavailable** |
 | Tests | 43 passing. Typecheck and lint clean |
 | CI | **Green.** `.github/workflows/ci.yml`, ~45s on `ubuntu-latest`, no warnings |
 
@@ -71,11 +71,11 @@ pnpm run sift "things you can wear"
   flag. All three call `requireGatewayKey()` from `src/env.ts`, so
   `node src/cli.mts` and `pnpm run sift` behave identically.
 - **Jev is unreliable right now.** Single provider, no fallback,
-  `fallbacksAvailable: []`. The 2026-09-22 bench lost 4 of 10 queries to 503s
-  after 6 attempts each. Response times that run: 1.3s to **68s** for identical
-  work. The browser retries 4 times; the CLI retries once on purpose so
-  failures stay visible. Promotional free pricing ends 2026-09-25, after which
-  load should drop.
+  `fallbacksAvailable: []`. Two benches on 2026-09-22 lost 4 of 10 and then 2
+  of 10 queries to 503s, each after 6 attempts. Response times across both:
+  1.3s to **68s** for identical work, with several at ~35s. The browser
+  retries 4 times; the CLI retries once on purpose so failures stay visible.
+  Promotional free pricing ends 2026-09-25, after which load should drop.
 - **An agent cannot run `pnpm run bench`.** It needs the key in `.env`, which
   the sandbox denies reading. A person runs it and pastes the output.
 - **An agent CAN read CI itself** through the built-in browser at
@@ -99,14 +99,23 @@ pnpm run sift "things you can wear"
 
 ## What's LEFT
 
-### 1. 🔑 key in the band queries — half-answered, needs one more bench
+### 1. Sweep the acceptance set for other unasserted puns
 
-The 2026-09-22 run put 🔑 at **0.95 on "start a band"**, below the 1.5 floor
-and out of the row: `🎸 🥁 🪨 🎹 🎺 🎷 🎻`. So it does not reproduce there.
+Closed the 🔑 question and found the real defect underneath it. The original
+report had it backwards: 🔑 stays **out** of "start a band" (0.88, below the
+1.5 floor) and **in** "instruments you could play in a band", where it ranked
+last of seven.
 
-The control query, "instruments you could play in a band", was one of the four
-503s, so the other half is unverified. Run `pnpm run bench` until that query
-completes. If 🔑 stays below the floor there too, delete this item.
+The query's note already said a pun with no valid reading there "would be a
+real failure", but `mustNot` listed only `rock`, `pizza`, `hammer`. The check
+could not go red on 🔑 because nobody encoded it. Fixed by `outranks: ['key']`,
+matching the 🪨 precedent — a key is a tonal centre, which is band vocabulary
+but not an instrument you could play.
+
+**What is left:** the same gap may exist elsewhere. Read each query's `note`
+and confirm every claim it makes is encoded in `must` / `mustNot` /
+`outranks`. A note that describes a standard the assertions do not enforce is
+the defect to look for.
 
 ### 2. `ubuntu-latest` migrates to Ubuntu 26 from 2026-10-19
 

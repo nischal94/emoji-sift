@@ -235,3 +235,27 @@ Three cases end in `EPERM: operation not permitted, unlink '…/.env'` — the
 sandbox refuses to delete any file named `.env`, including ones the test just
 created in a temp directory. The assertions pass; the cleanup is what fails.
 Run them unsandboxed, or trust CI, which runs the same 43 on Ubuntu.
+
+### The acceptance set had its own false green
+
+- **A note that states a standard is not an assertion.** "instruments you
+  could play in a band" carried the comment that a pun with no valid reading
+  "would be a real failure", and `mustNot` listed `rock`, `pizza`, `hammer`.
+  🔑 key appeared in the row and the query PASSED, because the standard in the
+  prose was never encoded. The principle had been applied to one pun and not
+  the other.
+- **The bug report was backwards, and only a completed run showed it.** The
+  handoff said 🔑 scored above the floor on BOTH band queries. Measured: 0.88
+  on "start a band" (out of the row) and in the row on the control query —
+  the opposite of both halves. Two earlier benches lost the control query to
+  503s, so the claim survived unexamined.
+- **Fixed with `outranks: ['key']`, not `mustNot`.** A key is a tonal centre,
+  which is band vocabulary but not an instrument you could play. Forbidding it
+  would assert something untrue; requiring the instruments to beat it says
+  what matters. Same reasoning as 🪨 on "start a band".
+- **Proved the new guard can fail before keeping it.** Replayed the outranks
+  logic against the measured scores: passes on the real 2026-09-22 shape, goes
+  red when 🔑 outranks a `must` entry.
+- **Next sweep:** read every query's `note` and confirm each claim it makes is
+  encoded in `must` / `mustNot` / `outranks`. Prose describing a standard the
+  assertions do not enforce is the shape to hunt.
