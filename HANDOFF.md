@@ -97,9 +97,7 @@ pnpm run sift "things you can wear"
 - Two audits and one external review, all findings closed
 - CI on push and PR, verified green on a clean runner
 
-## What's LEFT
-
-### 1. Sweep the acceptance set for other unasserted puns
+## The acceptance set, after the 2026-09-22 sweep
 
 Closed the 🔑 question and found the real defect underneath it. The original
 report had it backwards: 🔑 stays **out** of "start a band" (0.88, below the
@@ -112,12 +110,28 @@ could not go red on 🔑 because nobody encoded it. Fixed by `outranks: ['key']`
 matching the 🪨 precedent — a key is a tonal centre, which is band vocabulary
 but not an instrument you could play.
 
-**What is left:** the same gap may exist elsewhere. Read each query's `note`
-and confirm every claim it makes is encoded in `must` / `mustNot` /
-`outranks`. A note that describes a standard the assertions do not enforce is
-the defect to look for.
+**Swept the other nine queries: no further gaps.** Only two
+other notes make normative claims, and both are asserted — "things that make
+noise" names feather, rock and socks as silent and forbids exactly those;
+"start a band" calls 🪨 defensible and requires the instruments to outrank it.
+The rest are descriptive: they say why a query earns its place, not what the
+row must contain.
 
-### 2. `ubuntu-latest` migrates to Ubuntu 26 from 2026-10-19
+Two things the sweep deliberately did NOT change, both recorded so the next
+reader does not redo the reasoning:
+
+- **The magnet `mustNot` lists 4 of ~35 non-ferrous objects.** That is the
+  header's "deliberately short" policy, not an oversight. Completing the list
+  would make the set a snapshot of today's output and would never converge.
+- **🏀 basketball appears on "i need to lose weight"** below 🥦, the same
+  defensible-secondary shape as 🪨 on "start a band". It is not asserted
+  because that query's note never claimed a standard about it. Adding
+  `outranks: ['basketball']` would invent a judgement the set never made.
+  Assert it only if the row starts leading with it.
+
+## What's LEFT
+
+### 1. `ubuntu-latest` migrates to Ubuntu 26 from 2026-10-19
 
 A dated watch item, not a task: the build is version-agnostic and the only
 annotation left on a green run is this notice. If CI breaks after that date,
@@ -127,7 +141,7 @@ The Node 20 deprecation that sat here is fixed. `actions/checkout@v7`,
 `actions/setup-node@v7` and `pnpm/action-setup@v6` as of `8eb70cf`, verified
 by the warning disappearing from run #4, not by the run merely passing.
 
-### 3. Deployment, if it ever goes public
+### 2. Deployment, if it ever goes public
 
 The server is loopback-only and has no auth or rate limiting beyond a
 concurrency cap. Before exposing it: per-IP limits, and decide whether

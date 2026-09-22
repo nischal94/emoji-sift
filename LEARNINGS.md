@@ -259,3 +259,21 @@ Run them unsandboxed, or trust CI, which runs the same 43 on Ubuntu.
 - **Next sweep:** read every query's `note` and confirm each claim it makes is
   encoded in `must` / `mustNot` / `outranks`. Prose describing a standard the
   assertions do not enforce is the shape to hunt.
+
+- **The sweep that followed found nothing, and that is the right outcome.**
+  Checking the other nine queries: only two other notes make a normative
+  claim, and both are already asserted. The rest are descriptive — they say
+  why a query earns its place in the set, not what its row must contain. A
+  descriptive note has nothing to encode.
+- **Distinguish a missing assertion from a deliberately short list.** The 🔑
+  gap was a note stating a standard no assertion enforced. The magnet query's
+  four non-ferrous entries out of ~35 candidates are NOT the same defect: the
+  file header says `mustNot` is deliberately short, because completing it
+  would turn the set into a snapshot of today's output. One is a hole; the
+  other is policy. Adding to the second is the denylist mistake.
+- **Do not assert a judgement the set never made.** 🏀 basketball sits below
+  🥦 on "i need to lose weight" — structurally the same defensible-secondary
+  shape as 🪨 on "start a band". It stayed unasserted, because that query's
+  note never claimed anything about it, and inventing the claim during a
+  sweep would harden today's output into a rule. Recorded in HANDOFF instead,
+  with the trigger that would justify asserting it.
