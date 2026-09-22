@@ -21,7 +21,7 @@ jobs:
 
       # No `packageManager` field in package.json, so the version lives here.
       # Keep it within the major that wrote pnpm-lock.yaml (lockfileVersion 9).
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10
 
