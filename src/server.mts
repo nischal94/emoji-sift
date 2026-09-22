@@ -7,7 +7,9 @@ import {
   InvalidQueryError,
   MAX_QUERY_LENGTH,
   RETRIES_INTERACTIVE,
+  normalizeQuery,
 } from './sift.ts';
+import { ResultCache } from './result-cache.ts';
 
 import { abortOnDisconnect } from './disconnect.ts';
 import { checkSiftRequest } from './request-guard.ts';
@@ -32,6 +34,16 @@ const MAX_BODY_BYTES = 4 * 1024;
  */
 const MAX_CONCURRENT_SIFTS = 4;
 let inFlight = 0;
+
+/**
+ * Answers already paid for, keyed on the normalized query.
+ *
+ * Shared by every client of this process, so a warmed query is instant in any
+ * browser and survives a page reload — unlike the per-tab `Map` in
+ * `web/app.js`, which dies with the page. It also removes the repeat spend:
+ * the same query never bills a second evaluation while the server is up.
+ */
+const resultCache = new ResultCache();
 
 /**
  * The key stays here and never reaches the browser: the page posts a query
@@ -106,6 +118,27 @@ async function handleSift(
     return json(res, 400, { error: 'Expected a "query" string.' });
   }
 
+  // `normalizeQuery` throws on an empty or over-long query, and `sift` calls
+  // it again inside the try block below where that throw becomes a 400. Here
+  // it is outside any handler, so an unguarded call would turn a client error
+  // into a 500 — the same shape as the static-path defect fixed earlier.
+  let cacheKey: string;
+  try {
+    cacheKey = normalizeQuery(query);
+  } catch (error) {
+    if (error instanceof InvalidQueryError) {
+      return json(res, 400, { error: error.message });
+    }
+    throw error;
+  }
+
+  // Before the concurrency check on purpose: an answer already in memory
+  // costs nothing to serve, so refusing it under load would be perverse.
+  const cached = resultCache.get(cacheKey);
+  if (cached) {
+    return json(res, 200, cached);
+  }
+
   if (inFlight >= MAX_CONCURRENT_SIFTS) {
     res.setHeader('retry-after', '1');
     return json(res, 429, { error: 'Too many requests in flight. Try again.' });
@@ -128,10 +161,15 @@ async function handleSift(
       maxRetries: RETRIES_INTERACTIVE,
     });
     if (disconnected.signal.aborted) return;
-    json(res, 200, {
+    const body = {
       matches: matches.map((m) => ({ id: m.emoji.id, char: m.emoji.char, score: m.score })),
       ms,
-    });
+    };
+    // Stored only on a completed evaluation: a cancelled or failed one has
+    // nothing worth keeping, and caching a partial answer would serve it for
+    // the life of the process.
+    resultCache.set(cacheKey, body);
+    json(res, 200, body);
   } catch (error) {
     if (error instanceof InvalidQueryError) {
       return json(res, 400, { error: error.message });
