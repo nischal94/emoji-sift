@@ -6,6 +6,29 @@ const row = document.getElementById('row');
 const pile = document.getElementById('pile');
 
 /**
+ * `?clean` hides the match count and timing, for a screenshot or a recording.
+ *
+ * A URL parameter rather than a build flag or a stored preference: a demo is
+ * a one-off, and the operator should be able to turn it on by editing the
+ * address bar and off by reloading.
+ */
+if (new URLSearchParams(location.search).has('clean')) {
+  document.body.classList.add('clean');
+}
+
+/**
+ * Write the status line, marking failures so they survive clean mode.
+ *
+ * The flag drives CSS only. Every message still reaches the accessibility
+ * tree, because the element stays in it either way.
+ */
+function say(text, { error = false } = {}) {
+  status.textContent = text;
+  if (error) status.setAttribute('data-error', '');
+  else status.removeAttribute('data-error');
+}
+
+/**
  * Milliseconds of quiet before a query fires on its own.
  *
  * Every request carries 101 questions and ~16K tokens, and cancelling a fetch
@@ -172,7 +195,7 @@ async function run(query) {
     inFlight?.abort();
     inFlight = null;
     layout(hit.matches);
-    status.textContent = `${hit.matches.length} of ${pileNodes.size} · cached`;
+    say(`${hit.matches.length} of ${pileNodes.size} · cached`);
     return;
   }
 
@@ -181,12 +204,12 @@ async function run(query) {
   inFlight = controller;
 
   const requestId = ++latestRequestId;
-  status.textContent = 'sifting…';
+  say('sifting…');
 
   // The server retries transient 503s, which can push a response past ten
   // seconds. Saying so beats a status line that looks stuck.
   const slowNotice = setTimeout(() => {
-    if (requestId === latestRequestId) status.textContent = 'still sifting — the model is busy…';
+    if (requestId === latestRequestId) say('still sifting — the model is busy…');
   }, 6000);
 
   try {
@@ -203,19 +226,21 @@ async function run(query) {
     if (requestId !== latestRequestId) return;
 
     if (!res.ok) {
-      status.textContent = data.error ?? 'Something went wrong.';
+      say(data.error ?? 'Something went wrong.', { error: true });
       return;
     }
 
     cache.set(key, { matches: data.matches });
     layout(data.matches);
-    status.textContent = data.matches.length
-      ? `${data.matches.length} of ${pileNodes.size} · ${data.ms}ms`
-      : 'nothing matched';
+    say(
+      data.matches.length
+        ? `${data.matches.length} of ${pileNodes.size} · ${data.ms}ms`
+        : 'nothing matched',
+    );
   } catch (error) {
     if (error.name === 'AbortError') return;
     if (requestId !== latestRequestId) return;
-    status.textContent = 'Could not reach the server.';
+    say('Could not reach the server.', { error: true });
   } finally {
     clearTimeout(slowNotice);
     if (inFlight === controller) inFlight = null;
@@ -227,7 +252,7 @@ function reset() {
   inFlight?.abort();
   inFlight = null;
   layout([]);
-  status.textContent = '';
+  say('');
 }
 
 input.addEventListener('input', () => {

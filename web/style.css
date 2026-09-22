@@ -101,6 +101,36 @@ form.has-text #clear {
   color: var(--muted);
 }
 
+/*
+ * `?clean` hides the match count and timing for a screenshot or a recording,
+ * where "5 of 101 · 4583ms" is developer information sitting in a product
+ * shot.
+ *
+ * Clipped rather than `display: none`. The element carries
+ * `role="status" aria-live="polite"`, so it is how a screen reader learns
+ * that anything matched at all — the row of emoji is `aria-hidden`. Removing
+ * it from the accessibility tree would take that away to tidy a screenshot.
+ */
+body.clean #status:not([data-error]) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/*
+ * An error stays on screen even in clean mode. If the model is unavailable
+ * mid-recording, a silent app looks broken; the message is the only thing
+ * telling the operator to retake rather than debug.
+ */
+#status[data-error] {
+  color: var(--text);
+}
+
 #row {
   display: flex;
   flex-wrap: wrap;

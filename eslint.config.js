@@ -53,11 +53,15 @@ export default tseslint.config(
     files: ['*.js', 'web/**/*.js'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: {
-      // Listing globals by hand misses one every time; declare the whole
-      // browser environment instead.
+      // Hand-listed, and the list has already come up short once: `?clean`
+      // added `URLSearchParams` and `location` and lint went red on a change
+      // that was correct. Add the global when that happens rather than
+      // reaching for an eslint-disable.
       globals: {
         document: 'readonly',
         window: 'readonly',
+        location: 'readonly',
+        URLSearchParams: 'readonly',
         fetch: 'readonly',
         AbortController: 'readonly',
         setTimeout: 'readonly',
