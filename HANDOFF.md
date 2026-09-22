@@ -275,20 +275,48 @@ the reference video and both are settings, not code:
   line is the ONLY thing a screen reader has to learn anything matched.
   Clip it, never `display: none`.
 
-- **The theme follows the device, not the app.** `web/style.css` honours
-  `prefers-color-scheme`, so a phone or laptop set to dark renders the app
-  dark — correct behaviour, and not a bug. The reference is light. Set the
-  RECORDING DEVICE to light mode (iOS: Settings > Display & Brightness;
-  Android: Settings > Display), or the shot will not match. There is no
-  in-app theme override, and adding one is a product decision nobody has
-  made.
+- **The theme follows the OPERATING SYSTEM, not the app or the browser.**
+  `web/style.css` honours `prefers-color-scheme`, so a device set to dark
+  renders the app dark — correct behaviour, and not a bug. The reference
+  video is light.
+
+  **A fresh browser profile does not change this.** Chrome guest mode was
+  tried on 2026-09-22 and still rendered dark: a new profile drops
+  extensions and cookies, then asks the same OS what appearance is in use.
+  Fix it at the source — macOS System Settings > Appearance > Light (set it
+  explicitly, because Auto flips at sunset and would change the theme
+  mid-recording), or iOS Settings > Display & Brightness, or Android
+  Settings > Display.
+
+  Per-tab alternative that leaves the system alone: Chrome DevTools >
+  Rendering > "Emulate CSS media feature prefers-color-scheme" > light. It
+  survives reloads but needs DevTools open, which is awkward on camera.
+
+  There is no in-app theme override and no `?light` flag. Adding one is a
+  product decision nobody has made.
 
 **The latency problem is solved for recording purposes.** The server cache
 added 2026-09-22 means a query only ever waits once per server process. Warm
-the three demo queries, then record: each returns instantly with the full
-fly-up animation and no "cached" label on screen, because the server replays
-the original response including its `ms` value. A page reload no longer costs
+the demo queries, then record: each returns instantly with the full fly-up
+animation and no "cached" label on screen, because the server replays the
+original response including its `ms` value. A page reload no longer costs
 anything. Restarting the server does — the cache is in memory by design.
+
+Five queries were warmed on 2026-09-22 and measured at 1–7ms round trip:
+`things you can wear` (12), `i need to lose weight` (4),
+`things a magnet could attract` (12), `things you can wear in winter` (5),
+`start a band` (7). **The cache key is case-sensitive** —
+`normalizeQuery` collapses whitespace and preserves case, so `Things You Can
+Wear` is a different key and pays full price. Type the queries in lowercase.
+
+**🪨 rock on "start a band" is correct and deliberate.** Measured: guitar
+2.51, drum 2.08, **rock 2.04**, trumpet 1.81, piano 1.80, saxophone 1.78,
+violin 1.65. The model is reading "start a *rock* band", which is a fair
+reading of the phrase. The acceptance set already encodes this as
+`outranks` rather than `mustNot`, and the assertion passes because guitar
+beats rock. Do not "fix" this. If a demo needs instruments with no pun, the
+control query `instruments you could play in a band` is in the set for
+exactly that, and was NOT warmed.
 
 **Then, in order:** record if it is responsive → decide deployment with item 1
 reopened → the deployment work itself, already scoped in DEPLOYMENT.md.
