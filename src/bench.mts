@@ -1,7 +1,7 @@
 import { requireGatewayKey } from './env.ts';
 import { QUERIES } from './queries.ts';
 import { EMOJI } from './emoji.ts';
-import { sift, DEFAULT_LIMIT, DEFAULT_FLOOR, RETRIES_BENCH, promptStyle } from './sift.ts';
+import { sift, DEFAULT_LIMIT, DEFAULT_FLOOR, RETRIES_BENCH } from './sift.ts';
 
 requireGatewayKey();
 
@@ -17,7 +17,7 @@ const floor = envNumber(process.env.SIFT_FLOOR, DEFAULT_FLOOR);
 const NAMES = new Map(EMOJI.map((e) => [e.id, `${e.char} ${e.name}`]));
 
 console.log(
-  `\n  ${QUERIES.length} queries · ${promptStyle()} prompt · top ${limit} · floor ${floor}\n`,
+  `\n  ${QUERIES.length} queries · top ${limit} · floor ${floor}\n`,
 );
 
 let passed = 0;

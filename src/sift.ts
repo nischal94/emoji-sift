@@ -116,30 +116,24 @@ export function normalizeQuery(raw: string): string {
  *
  * Pass a query that has been through `normalizeQuery`.
  */
-export type PromptStyle = 'repeated' | 'generic';
-
 /**
- * Which prompt shape to build. `generic` is the default; `SIFT_PROMPT=repeated`
- * selects the older shape for comparison.
+ * Build one score question per emoji. The query is NOT interpolated here: it
+ * reaches the model only through shared state.
  *
- * `repeated` names the query inside every criteria level, costing about five
- * copies of it per emoji — roughly 505 across the pile. `generic` refers to
- * the query in `state` instead.
+ * `query` is accepted and deliberately unused. It keeps the call sites honest
+ * about what is being asked, and it is what the payload-independence test
+ * varies to prove the request body does not grow with the user's text.
  *
- * Measured against the acceptance set rather than argued: both shapes passed
- * the same six queries and failed the same one, while `generic` used 103,460
- * tokens against 121,336, returned 🎻 on "start a band" where `repeated` left
- * it below the floor, and holds a near-constant payload because the query no
- * longer inflates it. Keeping the user's text out of the instructions is also
- * the stronger boundary: quote-escaping does not stop natural-language
- * injection, separating content from instruction does.
+ * An earlier shape named the query inside every criteria level, about five
+ * copies per emoji and roughly 505 across the pile. It was removed after the
+ * acceptance set measured the two: same queries passed, 103,460 tokens against
+ * 121,336, and 🎻 returned on "start a band" where the repeated shape left it
+ * below the floor. Keeping the user's text out of the instructions is also the
+ * stronger boundary — escaping quotes does not stop natural-language
+ * injection, separating content from instruction does. That boundary is not a
+ * setting: there is one shape, so no environment variable can weaken it.
  */
-export function promptStyle(): PromptStyle {
-  return process.env.SIFT_PROMPT === 'repeated' ? 'repeated' : 'generic';
-}
-
-/** The candidate: the query lives only in shared state. */
-function buildGenericQuestions(pile: readonly Emoji[]) {
+export function buildQuestions(_query: string, pile: readonly Emoji[]) {
   return Object.fromEntries(
     pile.map((e) => [
       e.id,
@@ -151,29 +145,6 @@ function buildGenericQuestions(pile: readonly Emoji[]) {
           `A stretch. "${e.name}" fits only an unusual reading of the query.`,
           `A sensible answer. "${e.name}" is a reasonable thing to offer whoever made that query.`,
           `An obvious answer. "${e.name}" is among the first things to offer them, whether the query named a category, a goal, or a situation.`,
-        ],
-      },
-    ]),
-  );
-}
-
-export function buildQuestions(query: string, pile: readonly Emoji[]) {
-  if (promptStyle() === 'generic') return buildGenericQuestions(pile);
-  return buildRepeatedQuestions(query, pile);
-}
-
-function buildRepeatedQuestions(query: string, pile: readonly Emoji[]) {
-  return Object.fromEntries(
-    pile.map((e) => [
-      e.id,
-      {
-        type: 'score' as const,
-        instructions: `How well does "${e.name}" answer "${query}"?`,
-        criteria: [
-          `Unrelated. Nobody looking for "${query}" would want "${e.name}".`,
-          `A stretch. "${e.name}" only fits with an unusual reading of "${query}".`,
-          `A sensible answer. "${e.name}" is a reasonable thing to offer someone who asked for "${query}".`,
-          `An obvious answer. "${e.name}" is among the first things to hand someone who asked for "${query}", whether they named a category, a goal, or a situation.`,
         ],
       },
     ]),
