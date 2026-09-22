@@ -47,7 +47,7 @@ pushes (`.claude/settings.json` denies it).
 | Server | Node http, key server-side, loopback only, 4 concurrent max. JSON content-type and same-host Origin required |
 | UI | Input, row, pile. Fly-up and fall-back both land at 0px error |
 | Acceptance set | 10 queries. Last run **8 passed / 0 failed / 2 unavailable** |
-| Tests | 62 passing. Typecheck and lint clean |
+| Tests | 62 total. **57 pass in the agent sandbox, 5 cannot run there** — see below. Typecheck and lint clean |
 | CI | **Green**, every run so far. `.github/workflows/ci.yml`, ~30s on `ubuntu-latest`, no warnings |
 
 ### How to run it
@@ -79,6 +79,33 @@ pnpm run sift "things you can wear"
   Promotional free pricing ends 2026-09-25, after which load should drop.
 - **An agent cannot run `pnpm run bench`.** It needs the key in `.env`, which
   the sandbox denies reading. A person runs it and pastes the output.
+- **Five tests fail in the agent sandbox and none of them is a defect.**
+  Measured 2026-09-22 at 57 pass / 5 fail; unsandboxed and in CI the suite is
+  62/62. Do not go bug-hunting, and do not accept a *sixth* failure as more of
+  the same — the five are named, and anything else is real:
+  - `a cancelled fetch aborts the work in flight`
+  - `a client that waits is not treated as a disconnect`
+  - `loads the key from a readable .env`
+  - `an unreadable .env is not reported as a missing credential`
+  - `the unreadable message names the path but never the contents`
+
+  Three separate denials cause them: the sandbox refuses to **bind a listener**
+  (`server.listen` → `EPERM`, killing the two disconnect tests before any
+  assertion runs), refuses to **unlink** a file named `.env` (the `finally`
+  cleanup in `env.test.ts`, after its assertions have passed), and refuses to
+  **read** one (so the probe subprocess exits non-zero). Writing a `.env` is
+  permitted, which is why the symptom looks like a cleanup bug.
+
+  To see the real state, run the tools directly — `pnpm` is aliased to `sfw`
+  and dies under the sandbox on a CA key:
+
+  ```bash
+  ./node_modules/.bin/tsc --noEmit; echo "typecheck: $?"
+  ./node_modules/.bin/eslint .; echo "lint: $?"
+  node --test 'src/**/*.test.ts' > out.txt 2>/dev/null; echo "test: $?"
+  ```
+
+  Never pipe the test run into `tail` — the pipeline reports `tail`'s status.
 - **An agent CAN read CI itself** through the built-in browser at
   `github.com/nischal94/emoji-sift/actions` — the repo is public, so no
   credential is involved. `gh` is blocked (its config holds the token) but
@@ -97,6 +124,8 @@ pnpm run sift "things you can wear"
 - Acceptance set with `must` / `mustNot` / `outranks`
 - Two audits and two external reviews, all findings closed
 - CI on push and PR, verified green on a clean runner
+- Deployment scoped and decided — `DEPLOYMENT.md`, 2026-09-22. Not launching
+  yet; the reasoning and the reopen trigger are in that file
 - `.gitignore` covers the credential shapes, not just `.env`: `secrets.json`,
   `*.pem`, `*.key`, `id_rsa`, `id_ed25519`, `*.local.json`. The repo is
   public, so a single slip is a disclosure. `.claude/.cc-writes/` is also
@@ -182,50 +211,32 @@ reader does not redo the reasoning:
 
 ## What's LEFT
 
-### 1. NEXT TASK — scope the deployment
+### 1. DORMANT — deployment, decided against for now
 
-The feature work is finished: input with a clear button, the pile, the fly-up
-row, the fall-back. Nothing is missing from the interaction. **What remains is
-everything a localhost-only build never had to solve** — going live is not
-more features, it is hosting, abuse limits and a cost ceiling.
+**Answered 2026-09-22 in [DEPLOYMENT.md](DEPLOYMENT.md). Not launching yet.**
+Read that file rather than re-deriving the reasoning; it records what was
+measured, what was decided, and what would reverse it.
 
-**This task is a decision document, not an implementation.** Answer the five
-questions below and write the answers down; implement after.
+The short version: the blocker is upstream and unfixable from this repository.
+20–40% of queries are lost to 503s *after* six retries, responses range to 68s,
+and Jev has no fallback provider. Questions 1–3 (host binding, per-IP rate
+limiting, idle-fire) are scoped in that document but deliberately not decided,
+because they are conditional on launching.
 
-1. **Host.** The `server.listen` call at the bottom of `src/server.mts` binds
-   `127.0.0.1` hard, and `PORT` comes from the environment. A platform needs a
-   `0.0.0.0` bind behind its proxy — decide whether that is an env-driven
-   branch or a config value, and where `AI_GATEWAY_API_KEY` lives once it
-   leaves `.env`.
-2. **Rate limiting. Treat as blocking.** The only guard today is
-   `MAX_CONCURRENT_SIFTS = 4` in `src/server.mts`, which is global, not
-   per-IP: four strangers saturate it, and one script bills the account
-   without ever exceeding it. Every accepted query is one Jev request of 101
-   score questions, ~14,780 tokens. Decide the per-IP window and what a
-   rejected caller sees. `MAX_BODY_BYTES` (4 KiB) already caps payload size;
-   it does not cap spend.
+**One item is NOT conditional and is still open: question 4, a spend ceiling
+at the Gateway.** It is configured outside this repository, so it survives any
+defect introduced inside it. Worth doing whether or not the launch happens, and
+it needs the user — an agent has no Gateway access.
 
-   The cross-origin half of this is now closed — `src/request-guard.ts`
-   requires `application/json` and rejects a foreign `Origin`, so another
-   site cannot spend the key from a visitor's browser. A direct client such
-   as a script is unaffected by that and is what per-IP limiting is for.
-3. **Idle-fire.** `IDLE_MS` in `web/app.js` fires a request 1200ms after
-   typing stops. Free while promotional pricing lasts, and that
-   **ends 2026-09-25** — three days after this was written, so check whether
-   it has already passed. Decide: keep it, raise it, or require an explicit
-   submit.
-4. **Spend ceiling.** No cost cap exists anywhere. Set a hard monthly limit at
-   the Gateway before the first public request, independent of whatever
-   rate limiting lands.
-5. **Whether to launch at all yet.** Two benches on 2026-09-22 lost 4 of 10
-   and 2 of 10 queries to Jev 503s, each after six attempts, with responses
-   from 1.3s to 68s. At that rate a real share of visitors meets an error or a
-   minute-long wait, and no amount of work here fixes an upstream single
-   provider with `fallbacksAvailable: []`. A loading state and an honest error
-   path are the minimum; waiting for Jev to stabilise is a legitimate answer.
+**Trigger to reopen: on or after 2026-09-25**, when promotional free pricing
+ends and load should drop. Run `pnpm run bench` twice and read two numbers:
 
-Recommendation: answer 5 first. If the answer is "not yet", 1–4 can wait and
-this item goes back to dormant with that decision recorded.
+- **Unavailable count** — 0–1 of 10 across both runs is a launch signal; 2+ is not.
+- **Worst response time** — under ~15s is fine behind the existing `still
+  sifting` notice; a 68s outlier is not, whatever the failure rate.
+
+If both clear, answer questions 1–3 and implement. If not, append the new
+measurements to DEPLOYMENT.md and leave this dormant.
 
 ### 2. `ubuntu-latest` migrates to Ubuntu 26 from 2026-10-19
 
@@ -239,9 +250,16 @@ by the warning disappearing from run #4, not by the run merely passing.
 
 ## Kickoff prompt for the next session
 
-> Read HANDOFF.md and LEARNINGS.md in ~/projects/emoji-sift. Run `pnpm run
-> check` to confirm the tree is green, then `pnpm run bench` — today's 503
-> rate and response times are evidence for question 5 below, so record what
-> you see. Then work What's LEFT item 1: scope the deployment. It is a
-> decision document, not an implementation. Start at question 5, because a
-> "not yet" makes the other four moot.
+> Read HANDOFF.md, then DEPLOYMENT.md, in ~/projects/emoji-sift. Deployment is
+> decided and dormant — do not reopen it unless the date has reached
+> 2026-09-25 and a bench run clears both thresholds in DEPLOYMENT.md.
+>
+> Confirm the tree first, using the direct-binary commands under "Environment
+> gotchas" rather than `pnpm run check`. Expected: typecheck 0, lint 0, and
+> 57 pass / 5 fail where the five are exactly the named sandbox cases. A sixth
+> failure, or a different name, is a real regression.
+>
+> Then pick up whichever is live: the spend ceiling at the Gateway (needs the
+> user; an agent has no Gateway access), or the CI watch item for 2026-10-19.
+> If neither is actionable, say so rather than inventing work — the feature is
+> finished and the repository is in a deliberate resting state.
