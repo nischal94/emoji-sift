@@ -45,10 +45,24 @@ session and is doing its job.
 **Every commit hash changed on 2026-09-22.** A `filter-branch` stripped an
 AI attribution trailer from 22 of 25 commits, followed by a force-push. Any
 hash quoted in a document, a note or an external tool from before that date
-is dangling. The pre-rewrite history survives locally in
-`refs/original/refs/heads/main` at `5415e17`, and in the branch
-`backup-before-trailer-strip`; both are kept until someone decides they are
-no longer wanted. Neither was pushed.
+is dangling. **The pre-rewrite history is gone.** The `refs/original/` backups
+and the `backup-before-trailer-strip` branch were deleted later the same day,
+once the rewritten history was confirmed on the remote. They were never
+pushed, so `5415e17` and everything before it no longer exists anywhere.
+
+**GitHub's repo sidebar lags the rewrite, and nothing in the repo can fix
+it.** Hours after the force-push it still listed "Contributors 2" with
+`claude`. Five sources were checked on 2026-09-22 and all five disagree with
+that widget: local git history (40 commits, one author, no trailers), the
+contributors API (`nischal94` alone, 40), `/commits?author=claude` (**0**),
+the Insights contributors graph (`nischal94` alone), and Settings >
+Collaborators ("0 collaborators have access to this repository").
+
+It is a background job GitHub reruns on its own schedule. There is no setting
+and nothing left to remove. Do not re-investigate: check
+`/repos/<owner>/<repo>/contributors` first, and if the sidebar still
+disagrees after a day the only lever is GitHub Support, naming the API
+discrepancy so it is a cache flush rather than a diagnosis.
 
 | Layer | State |
 | --- | --- |
