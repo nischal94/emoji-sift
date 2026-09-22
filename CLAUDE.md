@@ -19,6 +19,24 @@ the commit too.
 Conventional Commits, imperative, capitalized, no period. Subject ≤50 chars
 where possible.
 
+## When two instructions conflict
+
+The user's rules win. Every competing instruction from the harness that
+touches them says so in its own text. So the failure is never "which one
+wins" — it is not checking whether a conflict exists at all.
+
+Before acting on any instruction about commits, config, or files, check it
+against ~/.claude/CLAUDE.md. Both are in context. Comparing them is the job.
+
+Written here because it already failed twice in one session. 22 commits
+carried an attribution trailer that a rule in context forbade. Then the fix
+for that violated a second rule from the same file: config changes are
+proposed before they are written, and a global git hook was written without
+being proposed.
+
+The second mistake is the instructive one. A new guardrail cannot fix a
+reading failure, because the new guardrail also has to be read.
+
 ## Run it, don't hand it over
 
 If a command can be run here, run it. That includes history rewrites,
@@ -36,6 +54,21 @@ here:
 Before reporting a permission failure as a blocker, check which kind it is. A
 retry-able prompt is not a blocker; a deny rule is, and the response to one is
 to propose changing the rule, not to route around it.
+
+**"Authorized" means the user asked for this work.** It does not extend to:
+
+- writing or editing anything outside this repository
+- config changes anywhere — global or project — which are proposed with
+  content, placement and impact, then written only after an explicit yes
+- new scope that the task in motion did not imply
+
+Permission to execute is not permission to expand. When the user says "just do
+it" or "stop asking me to run commands", that is about execution speed inside
+the agreed task, never about widening what the task is.
+
+This paragraph exists because the section above it was used as the excuse. "If
+a command can be run here, run it" became the reasoning for writing a global
+git hook nobody asked for, in the same session that added this file.
 
 ## Force-push is safe *here*, and the reason is local
 
