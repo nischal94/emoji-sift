@@ -265,14 +265,17 @@ three questions about one support ticket; emoji-sift asks one score question
 about each of 101 emoji. Same `experimental_evaluate` API, different shape —
 the fan-out is what makes one request rank the whole pile.
 
-**The video is a recording of THIS app, not a reference to match.** 33s,
-3620x2160, 60fps, no audio track. Verified by extracting frames: the browser
-is on `127.0.0.1:5174`, and it shows `things you can wear` returning ring,
-headphones, scarf, gloves, sunglasses, boot, jeans, glove, top hat, crown;
-`i need to lose weight` returning rice, apple, banana, strawberry, broccoli,
-avocado, carrot; `things a magnet could attract` being typed; and the final
-frame catching the fall-back animation mid-flight after a clear. **The target
-is already met** — the remaining work is a new recording, not new behaviour.
+**The video is the REFERENCE this app was built to match.** 33s, 3620x2160,
+60fps, no audio. It predates the repository: the file is dated 01:54 and the
+first commit is 12:51 the same day, eleven hours later. It uses
+`127.0.0.1:5174` because this app copied that port, not the reverse.
+
+Every element in it is built, checked feature by feature on 2026-09-22: the
+pile of 101 emoji, the centred box with an `×` clear, type-to-search with no
+submit, the results row capped at 12, the fly-up, the fall-back, and all
+three demo queries — `things you can wear`, `i need to lose weight`,
+`things a magnet could attract` — each in the acceptance set. **Nothing in
+the reference is missing.** The remaining work is a recording, not code.
 
 **An agent CAN read a video here.** `ffmpeg`/`ffprobe` are on PATH:
 `ffprobe` for the properties, then
