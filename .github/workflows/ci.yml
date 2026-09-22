@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A force-push or a quick follow-up commit makes the older run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # No `packageManager` field in package.json, so the version lives here.
+      # Keep it within the major that wrote pnpm-lock.yaml (lockfileVersion 9).
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      # Type stripping, not compilation: 22.18 is the floor, and `engines`
+      # says the same. Bumping this means bumping `engines` too.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.20.0'
+          cache: pnpm
+
+      # Fails if pnpm-lock.yaml disagrees with package.json, rather than
+      # quietly resolving something the lockfile never pinned.
+      - run: pnpm install --frozen-lockfile
+
+      # Not `pnpm run check`: that chains the three with `&&`, so a typecheck
+      # failure hides whatever lint and the tests would have said. Separate
+      # steps report all three, and name which one failed.
+      - run: pnpm run typecheck
+
+      - run: pnpm run lint
+
+      # Deliberately no AI_GATEWAY_API_KEY. Every test here is pure; model
+      # behaviour is checked by `pnpm run bench`, which a person runs and
+      # reads, because asserting a model's output turns a model update into
+      # a red build with no bug behind it.
+      - run: pnpm run test
