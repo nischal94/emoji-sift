@@ -17,7 +17,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # No `packageManager` field in package.json, so the version lives here.
       # Keep it within the major that wrote pnpm-lock.yaml (lockfileVersion 9).
@@ -27,7 +27,7 @@ jobs:
 
       # Type stripping, not compilation: 22.18 is the floor, and `engines`
       # says the same. Bumping this means bumping `engines` too.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22.20.0'
           cache: pnpm
