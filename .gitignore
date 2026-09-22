@@ -1,15 +1,35 @@
 node_modules/
 
-# The AI Gateway key lives here and must never be committed.
+# Credentials. The AI Gateway key lives in .env and must never be committed;
+# the rest are shapes a secret arrives in, listed before one does rather than
+# after. This repo is public, so a single slip is a disclosure.
 .env
 .env.*
+*.pem
+*.key
+id_rsa
+id_ed25519
+secrets.json
+*.local.json
 
 *.log
 .DS_Store
 
-# Video files are not ours to redistribute.
+# Media is not ours to redistribute.
 *.mp4
+*.mov
+*.webm
+
+# Build and coverage output. Nothing here produces them today; they are listed
+# so adding a bundler or a coverage run does not also add noise to the repo.
+dist/
+coverage/
+
+# Editor state, which is per-person and not part of the project.
+.vscode/
+.idea/
 
 # Local tool state.
 .impeccable/
 .claude/settings.local.json
+.claude/.cc-writes/
