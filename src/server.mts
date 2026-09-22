@@ -9,22 +9,9 @@ import {
   RETRIES_INTERACTIVE,
 } from './sift.ts';
 
-import { loadEnvFile } from 'node:process';
+import { requireGatewayKey } from './env.ts';
 
-// Load .env here rather than relying on a flag in package.json, so running
-// this file directly works the same as running it through pnpm.
-try {
-  loadEnvFile(new URL('../.env', import.meta.url));
-} catch {
-  // No .env is fine; the credential check below gives the real message.
-}
-
-if (!process.env.AI_GATEWAY_API_KEY) {
-  console.error('[emoji-sift] Missing credential: AI_GATEWAY_API_KEY is not set.');
-  console.error('             Create a .env file in the project root containing:');
-  console.error('               AI_GATEWAY_API_KEY=<your key>');
-  process.exit(1);
-}
+requireGatewayKey();
 
 const PORT = Number(process.env.PORT ?? 5174);
 const WEB_DIR = fileURLToPath(new URL('../web/', import.meta.url));
