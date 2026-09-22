@@ -337,3 +337,29 @@ being accepted; all four held, and one was worse than reported.
   commits. The value is authoritative in git and the file already carries a
   tripwire that detects staleness; a copied hash only adds something to get
   wrong.
+
+### An edge-case pass on the fixes themselves
+
+- **Probe a new boundary with cases you did NOT design it against.** The two
+  guards added hours earlier were tested against the attacks that motivated
+  them. A second pass tried media types resembling JSON
+  (`application/ld+json`, `text/json`, `application/jsonx`, a
+  `;x=application/json` parameter), Origin tricks (subdomain, port prefix,
+  path, trailing slash, scheme mismatch), percent-encoded traversal, listener
+  accumulation over keep-alive, and the in-flight counter under abort. All
+  held but one.
+- **A throw outside the try block turns a client error into a server fault.**
+  `fileURLToPath` rejects a percent-encoded separator, and the call sat above
+  the try, so `/%2e%2e%2f.env` answered 500 and logged a stack trace. Nothing
+  leaked — traversal was blocked before and after — but a trivial loop floods
+  the log, and the status misreports whose fault it is. Ask of any handler:
+  which lines can throw, and are they inside the guard that classifies them.
+- **`startsWith` for a directory boundary needs the trailing separator.**
+  `/app/web-evil/x` starts with `/app/web`. The separator was present here by
+  construction; it is now asserted by a test, because the property is load
+  bearing and invisible.
+- **Test the resolver directly, not only through HTTP.** `new URL()`
+  normalises `/../.env` to `/.env` before a handler sees it, so over the wire
+  the traversal is defeated twice. Calling the resolver with un-normalised
+  input is stricter than reality, which is the point: it proves the check
+  still holds if a future change stops normalising first.

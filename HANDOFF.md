@@ -48,8 +48,8 @@ pushes (`.claude/settings.json` denies it).
 | Server | Node http, key server-side, loopback only, 4 concurrent max. JSON content-type and same-host Origin required |
 | UI | Input, row, pile. Fly-up and fall-back both land at 0px error |
 | Acceptance set | 10 queries. Last run **8 passed / 0 failed / 2 unavailable** |
-| Tests | 55 passing. Typecheck and lint clean |
-| CI | **Green**, 9 of 9 runs. `.github/workflows/ci.yml`, ~30s on `ubuntu-latest`, no warnings |
+| Tests | 62 passing. Typecheck and lint clean |
+| CI | **Green**, every run so far. `.github/workflows/ci.yml`, ~30s on `ubuntu-latest`, no warnings |
 
 ### How to run it
 
@@ -94,7 +94,7 @@ pnpm run sift "things you can wear"
 - Server with the key held server-side, body cap, concurrency cap, abort
   plumbed through so a cancelled keystroke stops the upstream call
 - Fly-up and fall-back animation, both verified at 0px landing error
-- 55 tests, each written against a defect that actually occurred
+- 62 tests, each written against a defect that actually occurred
 - Acceptance set with `must` / `mustNot` / `outranks`
 - Two audits and two external reviews, all findings closed
 - CI on push and PR, verified green on a clean runner
@@ -123,6 +123,26 @@ reasoning are in LEARNINGS.
   variable set.
 - **Four documentation claims had outlived the code**, including one in a test
   comment the review did not list.
+
+### An edge-case pass on the new boundaries found one more
+
+Probed both new guards with cases they were not designed against: media types
+that resemble JSON (`application/ld+json`, `text/json`, `application/jsonx`,
+a `;x=application/json` parameter), Origin host tricks (subdomain, port
+prefix, path and trailing slash, scheme mismatch), percent-encoded traversal,
+listener accumulation over keep-alive, and the `inFlight` counter under abort.
+All held except one:
+
+- **A malformed static path answered 500.** `fileURLToPath` throws on
+  `%2e%2e%2f`, and the call sat outside the try block, so a client error
+  surfaced as a server fault and logged a stack trace for each request. Now
+  `src/static-path.ts` returns 400 for unresolvable and 403 for outside-root.
+  No content was ever exposed; the traversal itself was blocked throughout.
+
+Two properties worth not breaking, both now covered by tests: `WEB_DIR` must
+end with a separator, or the prefix check lets a sibling directory through
+(`/app/web-evil` starts with `/app/web`); and `/api/emoji` needs no request
+guard because it serves a constant and makes no model call.
 
 ## The acceptance set, after the 2026-09-22 sweep
 
