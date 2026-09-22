@@ -245,7 +245,7 @@ annotation left on a green run is this notice. If CI breaks after that date,
 pin `runs-on: ubuntu-24.04` and investigate from a working build.
 
 The Node 20 deprecation that sat here is fixed. `actions/checkout@v7`,
-`actions/setup-node@v7` and `pnpm/action-setup@v6` as of `8eb70cf`, verified
+`actions/setup-node@v7` and `pnpm/action-setup@v6` as of `83d40f2`, verified
 by the warning disappearing from run #4, not by the run merely passing.
 
 ## Kickoff prompt for the next session
