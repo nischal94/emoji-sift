@@ -259,6 +259,21 @@ Queries that show why the model is needed, because keyword search cannot do
 them: `things a magnet could attract`, `i need to lose weight`,
 `things you can wear`, `start a band`.
 
+**Record with `?clean`, in a light-mode browser.** Two things differ from the
+reference otherwise:
+
+- `http://127.0.0.1:5174/?clean` hides the `5 of 101 · 4583ms` status line,
+  which is developer information in a product shot. Errors still show, so a
+  503 mid-take is visible rather than looking like a frozen app. A plain
+  reload restores the diagnostics.
+- **The theme follows the device, not the app.** `web/style.css` honours
+  `prefers-color-scheme`, so a phone or laptop set to dark renders the app
+  dark — correct behaviour, and not a bug. The reference is light. Set the
+  RECORDING DEVICE to light mode (iOS: Settings > Display & Brightness;
+  Android: Settings > Display), or the shot will not match. There is no
+  in-app theme override, and adding one is a product decision nobody has
+  made.
+
 **The latency problem is solved for recording purposes.** The server cache
 added 2026-09-22 means a query only ever waits once per server process. Warm
 the three demo queries, then record: each returns instantly with the full
