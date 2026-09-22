@@ -32,7 +32,12 @@ doing the judging is `typesafe-ai/jev` through Vercel AI Gateway.
 
 ## Current state (2026-09-22)
 
-Working end to end. Not yet on GitHub.
+Working end to end. Public at https://github.com/nischal94/emoji-sift,
+first commit `336ec0c` on `main`.
+
+**Pushing to `main` is blocked by a global hook.** A push needs
+`ALLOW_MAIN_PUSH=1 git push` run by the user; the agent commits but never
+pushes (`.claude/settings.json` denies it).
 
 | Layer | State |
 | --- | --- |
@@ -84,29 +89,24 @@ pnpm run sift "things you can wear"
 
 ## What's LEFT
 
-### 1. First commit and GitHub (this session, if you want it)
-
-Repo is not initialized. `.gitignore` excludes `.env`, `node_modules`,
-`*.mp4`, `.DS_Store`, `.impeccable/` and `.claude/settings.local.json`.
-
-### 2. CI
+### 1. CI
 
 `.github/workflows/ci.yml` — typecheck, lint, test on push and PR. No
 `AI_GATEWAY_API_KEY` in CI: the tests are pure, and model behaviour belongs in
 `pnpm run bench`, which a person runs and reads.
 
-### 3. The fall-back animation
+### 2. The fall-back animation
 
 Built but never watched. Clearing the input should return every lifted emoji to
 its pile position.
 
-### 4. 🔑 key in both band queries
+### 3. 🔑 key in both band queries
 
 Scores above the floor for "start a band" and "instruments you could play in a
 band" — a musical-key pun, same shape as 🪨 rock. Not a failure; add to
 `outranks` if it looks wrong in the UI.
 
-### 5. Deployment, if it ever goes public
+### 4. Deployment, if it ever goes public
 
 The server is loopback-only and has no auth or rate limiting beyond a
 concurrency cap. Before exposing it: per-IP limits, and decide whether
