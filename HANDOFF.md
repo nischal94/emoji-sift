@@ -259,38 +259,22 @@ Queries that show why the model is needed, because keyword search cannot do
 them: `things a magnet could attract`, `i need to lose weight`,
 `things you can wear`, `start a band`.
 
-**OPEN DECISION — invert `?clean` to `?debug`.** Raised 2026-09-22 by the
-user ("do we really need this line?"), recommended, not yet decided.
+**Record in a light-mode browser. No flag needed.** Two things differ from
+the reference video and both are settings, not code:
 
-The status line is three things sharing one element: a loading state
-(`sifting…`, `still sifting`, errors), a result count (`5 of 101`), and a
-latency figure (`4583ms`). Only the first is load-bearing for a user. The
-last advertises how slow the model was to someone who never asked, and on a
-bad day it prints 35 seconds under the result.
+- **The status line is hidden by default** as of 2026-09-22. `5 of 101 ·
+  4583ms` now needs `?debug`; a plain URL shows nothing. Loading states
+  (`sifting…`, `still sifting`), `nothing matched` and errors still show
+  always — a query that runs for thirty seconds behind a blank screen reads
+  as a broken app, and a silent failure mid-take wastes time on debugging
+  instead of a retake.
 
-The proposal is to flip the default: no count and no timing unless `?debug`
-is passed, with loading states and errors always visible. The mechanism
-already exists — it is the same body class, with the condition reversed —
-so this is a small change whose only real question is which default is
-right.
+  Messages carry `data-kind`: `diagnostic` hides, `error` shows, no kind
+  means transient progress and shows. Whatever changes here, the element must
+  stay in the accessibility tree — the emoji row is `aria-hidden`, so this
+  line is the ONLY thing a screen reader has to learn anything matched.
+  Clip it, never `display: none`.
 
-**Do not just reformat the milliseconds into seconds.** That was considered
-and rejected: `4.6s` is prettier than `4583ms` and is the same diagnostic in
-a nicer font.
-
-**The constraint that shapes any version of this:** the element carries
-`role="status" aria-live="polite"` and the emoji row is `aria-hidden`, so
-this line is the ONLY thing a screen reader has to learn that anything
-matched. Whatever the visual default becomes, the count must keep reaching
-the accessibility tree — clip it, never `display: none`.
-
-**Record with `?clean`, in a light-mode browser.** Two things differ from the
-reference otherwise:
-
-- `http://127.0.0.1:5174/?clean` hides the `5 of 101 · 4583ms` status line,
-  which is developer information in a product shot. Errors still show, so a
-  503 mid-take is visible rather than looking like a frozen app. A plain
-  reload restores the diagnostics.
 - **The theme follows the device, not the app.** `web/style.css` honours
   `prefers-color-scheme`, so a phone or laptop set to dark renders the app
   dark — correct behaviour, and not a bug. The reference is light. Set the
