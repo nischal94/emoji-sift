@@ -102,16 +102,23 @@ form.has-text #clear {
 }
 
 /*
- * `?clean` hides the match count and timing for a screenshot or a recording,
- * where "5 of 101 · 4583ms" is developer information sitting in a product
- * shot.
+ * The count and timing are hidden unless `?debug` is passed.
+ *
+ * "5 of 101 · 4583ms" answers a question nobody asked, and on a slow day it
+ * prints thirty-five seconds under the result. It is real information while
+ * tuning the floor or the prompt, so the flag reveals it rather than a build
+ * removing it.
  *
  * Clipped rather than `display: none`. The element carries
  * `role="status" aria-live="polite"`, so it is how a screen reader learns
  * that anything matched at all — the row of emoji is `aria-hidden`. Removing
  * it from the accessibility tree would take that away to tidy a screenshot.
+ *
+ * Only `data-kind="diagnostic"` is hidden. Progress messages and errors carry
+ * a different kind or none, so they show whatever the flag: a query that runs
+ * for thirty seconds behind a blank screen reads as a broken app.
  */
-body.clean #status:not([data-error]) {
+#status[data-kind='diagnostic'] {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -122,12 +129,21 @@ body.clean #status:not([data-error]) {
   white-space: nowrap;
 }
 
+body.debug #status[data-kind='diagnostic'] {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip-path: none;
+}
+
 /*
- * An error stays on screen even in clean mode. If the model is unavailable
- * mid-recording, a silent app looks broken; the message is the only thing
- * telling the operator to retake rather than debug.
+ * An error is the one message that must compete for attention. If the model
+ * is unavailable, a silent app looks broken; this is the only thing telling
+ * the reader to try again rather than assume it is dead.
  */
-#status[data-error] {
+#status[data-kind='error'] {
   color: var(--text);
 }
 

@@ -6,26 +6,38 @@ const row = document.getElementById('row');
 const pile = document.getElementById('pile');
 
 /**
- * `?clean` hides the match count and timing, for a screenshot or a recording.
+ * `?debug` shows the match count and timing.
  *
- * A URL parameter rather than a build flag or a stored preference: a demo is
- * a one-off, and the operator should be able to turn it on by editing the
- * address bar and off by reloading.
+ * Hidden by default, because "5 of 101 · 4583ms" answers a question nobody
+ * asked and advertises how slow the model was on a bad day. It is real
+ * information while tuning the floor or the prompt, which is what the flag is
+ * for.
+ *
+ * A URL parameter rather than a build flag or a stored preference: turn it on
+ * by editing the address bar, off by reloading.
  */
-if (new URLSearchParams(location.search).has('clean')) {
-  document.body.classList.add('clean');
+if (new URLSearchParams(location.search).has('debug')) {
+  document.body.classList.add('debug');
 }
 
 /**
- * Write the status line, marking failures so they survive clean mode.
+ * Write the status line, tagging the message so CSS can decide what shows.
  *
- * The flag drives CSS only. Every message still reaches the accessibility
- * tree, because the element stays in it either way.
+ * Three kinds, because hiding on a single error/not-error flag would take the
+ * loading states with it, and a query that runs for thirty seconds with a
+ * blank screen reads as broken:
+ *
+ * - `diagnostic` — the count and timing. `?debug` only.
+ * - `error` — always visible. A silent failure looks like a frozen app.
+ * - neither (the default) — transient progress, always visible.
+ *
+ * The tag drives CSS only. Every message reaches the accessibility tree
+ * whatever the flag, because the element is never removed from it.
  */
-function say(text, { error = false } = {}) {
+function say(text, { kind } = {}) {
   status.textContent = text;
-  if (error) status.setAttribute('data-error', '');
-  else status.removeAttribute('data-error');
+  if (kind) status.setAttribute('data-kind', kind);
+  else status.removeAttribute('data-kind');
 }
 
 /**
@@ -195,7 +207,7 @@ async function run(query) {
     inFlight?.abort();
     inFlight = null;
     layout(hit.matches);
-    say(`${hit.matches.length} of ${pileNodes.size} · cached`);
+    say(`${hit.matches.length} of ${pileNodes.size} · cached`, { kind: 'diagnostic' });
     return;
   }
 
@@ -226,7 +238,7 @@ async function run(query) {
     if (requestId !== latestRequestId) return;
 
     if (!res.ok) {
-      say(data.error ?? 'Something went wrong.', { error: true });
+      say(data.error ?? 'Something went wrong.', { kind: 'error' });
       return;
     }
 
@@ -236,11 +248,14 @@ async function run(query) {
       data.matches.length
         ? `${data.matches.length} of ${pileNodes.size} · ${data.ms}ms`
         : 'nothing matched',
+      // "nothing matched" is the answer to the user's query, not a
+      // diagnostic: an empty row with no explanation reads as a failure.
+      { kind: data.matches.length ? 'diagnostic' : undefined },
     );
   } catch (error) {
     if (error.name === 'AbortError') return;
     if (requestId !== latestRequestId) return;
-    say('Could not reach the server.', { error: true });
+    say('Could not reach the server.', { kind: 'error' });
   } finally {
     clearTimeout(slowNotice);
     if (inFlight === controller) inFlight = null;
