@@ -363,3 +363,19 @@ being accepted; all four held, and one was worse than reported.
   the traversal is defeated twice. Calling the resolver with un-normalised
   input is stricter than reality, which is the point: it proves the check
   still holds if a future change stops normalising first.
+
+### A protection that lives in personal config is not a repo protection
+
+- **`.claude/.cc-writes/` was ignored by `~/.config/git/ignore`, not by the
+  repo.** It behaved correctly on the machine that had the global rule and
+  would have committed the directory from any fresh clone. The tell is that
+  `git check-ignore -v` names the file the rule came from; a rule from
+  outside the repo protects one developer, not the project.
+- **List the shapes a secret arrives in before one arrives.** The file
+  anticipated `.env` only. `secrets.json`, `*.pem`, `*.key`, `id_rsa` and
+  `*.local.json` would each have been committed on sight. On a public repo
+  the first mistake is the disclosure, so the list is written ahead of need.
+- **Check a gitignore change in both directions.** Confirm each new pattern
+  matches what it should, then confirm no currently tracked file is caught by
+  one — a rule shadowing a tracked file produces staging behaviour nobody can
+  explain months later.

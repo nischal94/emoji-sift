@@ -97,6 +97,11 @@ pnpm run sift "things you can wear"
 - Acceptance set with `must` / `mustNot` / `outranks`
 - Two audits and two external reviews, all findings closed
 - CI on push and PR, verified green on a clean runner
+- `.gitignore` covers the credential shapes, not just `.env`: `secrets.json`,
+  `*.pem`, `*.key`, `id_rsa`, `id_ed25519`, `*.local.json`. The repo is
+  public, so a single slip is a disclosure. `.claude/.cc-writes/` is also
+  listed here rather than relying on a personal global gitignore, which
+  protected one machine and no clone.
 
 ### The second external review (2026-09-22), all four findings fixed
 
