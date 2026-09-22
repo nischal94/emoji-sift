@@ -1,0 +1,160 @@
+:root {
+  --bg: #f4f4f5;
+  --card: #ffffff;
+  --text: #18181b;
+  --muted: #71717a;
+  --border: #e4e4e7;
+  --ring: #a1a1aa;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #18181b;
+    --card: #27272a;
+    --text: #fafafa;
+    --muted: #a1a1aa;
+    --border: #3f3f46;
+    --ring: #52525b;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+main {
+  flex: 1;
+  padding: clamp(2rem, 12vh, 8rem) 16px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+form {
+  position: relative;
+  width: min(100%, 560px);
+}
+
+#query {
+  width: 100%;
+  padding: 1.15rem 3rem 1.15rem 1.5rem;
+  font-size: 1.15rem;
+  color: inherit;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+#query:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+#clear {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  translate: 0 -50%;
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--muted);
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+}
+
+form.has-text #clear {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#clear:hover {
+  color: var(--text);
+}
+
+#status {
+  margin: 0;
+  min-height: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+#row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 3rem;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+/* The row holds invisible placeholders that reserve each slot. The emoji the
+   viewer sees is the pile element, translated onto the slot it belongs to. */
+#row .slot {
+  visibility: hidden;
+}
+
+/* The pile: every emoji, scattered along the bottom edge. Its arrangement is
+   set once in JS so the layout does not reshuffle on every query. */
+#pile {
+  position: relative;
+  height: clamp(120px, 22vh, 200px);
+  font-size: 1.75rem;
+  line-height: 1;
+  user-select: none;
+}
+
+#pile span {
+  position: absolute;
+  bottom: 0;
+  rotate: var(--rest-rotate, 0deg);
+
+  /* Leaving the pile is the moment worth animating: fast at the start, then
+     a long decelerating settle, the way a thrown object arrives. The curve
+     never passes its endpoint — an overshoot would read as bouncy rather
+     than weighted. */
+  transition:
+    transform 560ms cubic-bezier(0.16, 1, 0.3, 1),
+    rotate 560ms cubic-bezier(0.16, 1, 0.3, 1),
+    font-size 560ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+/* A lifted emoji sits above the pile it came from, grows to row size, and
+   straightens up. The rotation must go: a rotated element's bounding box is
+   the axis-aligned box AROUND it, so measuring one and then translating by
+   the result lands the emoji off by an amount that varies with its angle. */
+#pile span.lifted {
+  z-index: 2;
+  font-size: 2rem;
+  rotate: 0deg;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #pile span {
+    transition-duration: 1ms;
+  }
+}

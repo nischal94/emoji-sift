@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>emoji sift</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <main>
+      <form id="form" autocomplete="off">
+        <input
+          id="query"
+          type="text"
+          maxlength="200"
+          placeholder="things you can wear"
+          aria-label="Describe what you are looking for"
+          enterkeyhint="search"
+        />
+        <button id="clear" type="button" aria-label="Clear">&times;</button>
+      </form>
+
+      <p id="status" role="status" aria-live="polite"></p>
+
+      <section id="row" aria-label="Matching emoji"></section>
+    </main>
+
+    <div id="pile" aria-hidden="true"></div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

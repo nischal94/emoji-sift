@@ -1,0 +1,15 @@
+node_modules/
+
+# The AI Gateway key lives here and must never be committed.
+.env
+.env.*
+
+*.log
+.DS_Store
+
+# Reference video for the interaction this rebuilds; not ours to redistribute.
+*.mp4
+
+# Local tool state.
+.impeccable/
+.claude/settings.local.json
