@@ -129,3 +129,67 @@ row. 38 tests, a 10-query acceptance set at 9 passed / 0 failed.
   that was broken in the app, since the bug lived in the branch the
   re-simulation did not reproduce. Driving the actual click handler is what
   caught it.
+
+---
+
+## 2026-09-22 — the .env error path, its test, and CI
+
+**Shipped:** `f5331e7` (unreadable `.env` no longer reported as missing),
+`4818d7f` (five subprocess tests covering it), `48f6b48` (CI, green in 21s).
+
+### Diagnosis before fix, every time
+
+- **The first diagnosis was wrong and the first fix was dead code.** The bench
+  was reported as failing because a bare `catch` swallowed an EPERM. It had
+  not: `loadEnvFile` threw ENOENT, the "no .env is fine" branch was correct,
+  and the message was accurate. The fix written from that wrong reading —
+  `if (code !== 'ENOENT')` — could never fire, because Node reports a
+  chmod-000 file as ENOENT too. Verified outside the sandbox; only a directory
+  yields anything else (`ERR_INVALID_ARG_TYPE`).
+- **The guard had to change shape, not gain a branch.** An error code that has
+  already collapsed two states cannot separate them. `accessSync` for F_OK then
+  R_OK asks the filesystem directly, and that is what distinguishes "absent"
+  from "present but unreadable".
+- **Feeding the guard its bad input is what caught the dead branch.** It looked
+  correct on the page. It stayed silent against the exact failure it named.
+  This is the second instance of the same trap recorded in this file.
+
+### Testing a function that exits
+
+- **`process.exit` forces a subprocess test.** `requireGatewayKey` cannot run
+  in the test process without taking the runner down, and the file states it
+  distinguishes cannot be faked in-process. `execFileSync` into a temp project
+  with a real `.env` is the only honest shape. First subprocess test here; the
+  pattern is in `src/env.test.ts`.
+- **A test proves nothing until it has been seen red.** Reverting `env.ts` to
+  the pre-fix logic turned exactly the two unreadable-file cases red and left
+  the other three green. That asymmetry is the evidence.
+- **Clear the developer's own key from the child environment.** Inheriting it
+  would let the "missing credential" case pass for the wrong reason.
+
+### Verification hygiene
+
+- **`cmd | tail` reports `tail`'s exit code.** Three "green" checks this
+  session printed an empty status because of it. `>out 2>err; echo $?` is what
+  makes "it passed" a fact.
+- **A background wrapper's exit code is not the program's.** The bench run
+  reported "exit code 0" while the bench itself exited 1; the server reported 0
+  while `timeout` returned 124 — which was the *success* signal there, since a
+  healthy server is one still running when the clock stops.
+- **A typecheck does not run the entry points.** No test imports `cli.mts` or
+  `server.mts`, so a broken import there passes every check and dies at boot.
+  Both were run for real after the edit.
+- **An unverified backup is an assumption.** `cp src/env.ts "$TMPDIR/…"`
+  silently failed — `$TMPDIR` differs inside and outside the sandbox — and the
+  file was then overwritten deliberately. Git was the actual safety net; the
+  intended one did not exist. Confirm a restore path before a destructive step.
+
+### Operational
+
+- **The agent cannot reach Jev, by design.** The bench needs the key in
+  `.env`, which the sandbox denies. Same for `gh`, whose config holds the
+  GitHub token, and for `.github/workflows/`, which is unwritable because a
+  workflow executes with repository credentials outside the sandbox. These are
+  boundaries to hand to the user, not obstacles to route around.
+- **Availability got worse, not better.** 4 of 10 queries lost to 503s after
+  six attempts each, and one success took 68s against 1.3s for the same work.

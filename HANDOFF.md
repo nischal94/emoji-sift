@@ -33,7 +33,7 @@ doing the judging is `typesafe-ai/jev` through Vercel AI Gateway.
 ## Current state (2026-09-22)
 
 Working end to end. Public at https://github.com/nischal94/emoji-sift,
-first commit `336ec0c` on `main`.
+head `48f6b48` on `main`.
 
 **Pushing to `main` is blocked by a global hook.** A push needs
 `ALLOW_MAIN_PUSH=1 git push` run by the user; the agent commits but never
@@ -45,9 +45,9 @@ pushes (`.claude/settings.json` denies it).
 | Ranking | Pure, tested. Floor 1.5, limit 12, tie-break on pile order |
 | Server | Node http, key server-side, loopback only, 4 concurrent max |
 | UI | Input, row, pile. Fly-up and fall-back both land at 0px error |
-| Acceptance set | 10 queries, **9 passed / 0 failed / 1 unavailable** |
-| Tests | 38 passing. Typecheck and lint clean |
-| CI | **Not set up** — `.github/workflows/ci.yml` still to be created |
+| Acceptance set | 10 queries. Last run **6 passed / 0 failed / 4 unavailable** |
+| Tests | 43 passing. Typecheck and lint clean |
+| CI | **Green.** `.github/workflows/ci.yml`, ~21s on `ubuntu-latest` |
 
 ### How to run it
 
@@ -68,12 +68,16 @@ pnpm run sift "things you can wear"
 - **Node 22.18+.** Types are stripped, not compiled, so imports name the real
   file on disk (`./emoji.ts`, never `./emoji.js`).
 - **`.env` is loaded by the entry points themselves**, not by a package.json
-  flag. `node src/cli.mts` and `pnpm run sift` behave identically.
+  flag. All three call `requireGatewayKey()` from `src/env.ts`, so
+  `node src/cli.mts` and `pnpm run sift` behave identically.
 - **Jev is unreliable right now.** Single provider, no fallback,
-  `fallbacksAvailable: []`. Measured: success, 503, success, 503 on identical
-  input, and response times from 1.1s to 35s for the same work. The browser
-  retries 4 times; the CLI retries once on purpose so failures stay visible.
-  Promotional free pricing ends 2026-09-25, after which load should drop.
+  `fallbacksAvailable: []`. The 2026-09-22 bench lost 4 of 10 queries to 503s
+  after 6 attempts each. Response times that run: 1.3s to **68s** for identical
+  work. The browser retries 4 times; the CLI retries once on purpose so
+  failures stay visible. Promotional free pricing ends 2026-09-25, after which
+  load should drop.
+- **An agent cannot run `pnpm run bench`.** It needs the key in `.env`, which
+  the sandbox denies reading. A person runs it and pastes the output.
 
 ## What's DONE
 
@@ -83,29 +87,39 @@ pnpm run sift "things you can wear"
 - Server with the key held server-side, body cap, concurrency cap, abort
   plumbed through so a cancelled keystroke stops the upstream call
 - Fly-up and fall-back animation, both verified at 0px landing error
-- 38 tests, each written against a defect that actually occurred
+- 43 tests, each written against a defect that actually occurred
 - Acceptance set with `must` / `mustNot` / `outranks`
 - Two audits and one external review, all findings closed
+- CI on push and PR, verified green on a clean runner
 
 ## What's LEFT
 
-### 1. CI
+### 1. 🔑 key in the band queries — half-answered, needs one more bench
 
-`.github/workflows/ci.yml` — typecheck, lint, test on push and PR. No
-`AI_GATEWAY_API_KEY` in CI: the tests are pure, and model behaviour belongs in
-`pnpm run bench`, which a person runs and reads.
+The 2026-09-22 run put 🔑 at **0.95 on "start a band"**, below the 1.5 floor
+and out of the row: `🎸 🥁 🪨 🎹 🎺 🎷 🎻`. So it does not reproduce there.
 
-### 2. 🔑 key in both band queries
+The control query, "instruments you could play in a band", was one of the four
+503s, so the other half is unverified. Run `pnpm run bench` until that query
+completes. If 🔑 stays below the floor there too, delete this item.
 
-Scores above the floor for "start a band" and "instruments you could play in a
-band" — a musical-key pun, same shape as 🪨 rock. Not a failure; add to
-`outranks` if it looks wrong in the UI.
+### 2. Action versions in CI are on deprecated Node 20
+
+GitHub force-runs `actions/checkout@v4`, `actions/setup-node@v4` and
+`pnpm/action-setup@v4` on Node 24 and warns. Nothing breaks today. Bump to
+`@v5` for checkout and setup-node when convenient.
+
+Related and dated: **`ubuntu-latest` migrates to Ubuntu 26 from 2026-10-19.**
+The build is version-agnostic, so this is a watch item, not a task.
 
 ### 3. Deployment, if it ever goes public
 
 The server is loopback-only and has no auth or rate limiting beyond a
 concurrency cap. Before exposing it: per-IP limits, and decide whether
 idle-fire (1200ms) is affordable once Jev is paid.
+
+The 68s response measured on 2026-09-22 matters here: four browser retries
+behind a response that slow is far past any reasonable wait.
 
 ## Kickoff prompt for the next session
 
