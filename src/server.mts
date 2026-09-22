@@ -11,6 +11,7 @@ import {
 
 import { abortOnDisconnect } from './disconnect.ts';
 import { checkSiftRequest } from './request-guard.ts';
+import { resolveStaticPath } from './static-path.ts';
 import { requireGatewayKey } from './env.ts';
 
 requireGatewayKey();
@@ -180,15 +181,13 @@ async function serveStatic(
   pathname: string,
   res: ServerResponse,
 ): Promise<void> {
-  const name = pathname === '/' ? 'index.html' : pathname.slice(1);
-
-  // Resolve against the web directory and confirm the result stayed inside
-  // it, so a path like ../../.env cannot be read.
-  const resolved = new URL(name, new URL('file://' + WEB_DIR));
-  const filePath = fileURLToPath(resolved);
-  if (!filePath.startsWith(WEB_DIR)) {
-    return json(res, 403, { error: 'Forbidden.' });
+  const target = resolveStaticPath(pathname, WEB_DIR);
+  if ('status' in target) {
+    return json(res, target.status, {
+      error: target.status === 400 ? 'Bad path.' : 'Forbidden.',
+    });
   }
+  const filePath = target.path;
 
   try {
     const body = await readFile(filePath);
