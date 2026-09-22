@@ -38,7 +38,17 @@ that better than a copied value does.
 
 **Pushing to `main` is blocked by a global hook.** A push needs
 `ALLOW_MAIN_PUSH=1 git push` run by the user; the agent commits but never
-pushes (`.claude/settings.json` denies it).
+pushes (`.claude/settings.json` denies it). This was raised as a change on
+2026-09-22 and deliberately left alone — the deny rule held correctly all
+session and is doing its job.
+
+**Every commit hash changed on 2026-09-22.** A `filter-branch` stripped an
+AI attribution trailer from 22 of 25 commits, followed by a force-push. Any
+hash quoted in a document, a note or an external tool from before that date
+is dangling. The pre-rewrite history survives locally in
+`refs/original/refs/heads/main` at `5415e17`, and in the branch
+`backup-before-trailer-strip`; both are kept until someone decides they are
+no longer wanted. Neither was pushed.
 
 | Layer | State |
 | --- | --- |
@@ -126,6 +136,12 @@ pnpm run sift "things you can wear"
 - CI on push and PR, verified green on a clean runner
 - Deployment scoped and decided — `DEPLOYMENT.md`, 2026-09-22. Not launching
   yet; the reasoning and the reopen trigger are in that file
+- `CLAUDE.md`, the project's standing instructions. **Read it before the first
+  commit of any session**, not after. It holds the commit rules, what
+  "authorized" does and does not cover, the direct-binary check commands, and
+  the verification traps this repo has already sprung
+- AI attribution removed from the whole history and the rule written down in
+  two places. See "Every commit hash changed" above
 - `.gitignore` covers the credential shapes, not just `.env`: `secrets.json`,
   `*.pem`, `*.key`, `id_rsa`, `id_ed25519`, `*.local.json`. The repo is
   public, so a single slip is a disclosure. `.claude/.cc-writes/` is also
@@ -259,7 +275,16 @@ by the warning disappearing from run #4, not by the run merely passing.
 > 57 pass / 5 fail where the five are exactly the named sandbox cases. A sixth
 > failure, or a different name, is a real regression.
 >
+> Read CLAUDE.md before the first commit, not after.
+>
 > Then pick up whichever is live: the spend ceiling at the Gateway (needs the
 > user; an agent has no Gateway access), or the CI watch item for 2026-10-19.
-> If neither is actionable, say so rather than inventing work — the feature is
-> finished and the repository is in a deliberate resting state.
+> If neither is actionable, say so plainly and stop.
+>
+> **The feature is finished.** The repository is in a deliberate resting
+> state, and that is the correct end state, not a gap to fill. On 2026-09-22 a
+> session with no remaining feature work generated four rounds of proposals —
+> a settings change, a global hook, more documentation — each smaller in value
+> than the last and each costing the user a reply. Do not repeat that. A
+> session that reads the state, confirms the tree, reports "nothing is
+> actionable today" and ends is a successful session here.
