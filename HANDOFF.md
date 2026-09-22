@@ -131,7 +131,48 @@ reader does not redo the reasoning:
 
 ## What's LEFT
 
-### 1. `ubuntu-latest` migrates to Ubuntu 26 from 2026-10-19
+### 1. NEXT TASK — scope the deployment
+
+The build already matches the reference. Frame-by-frame against the video in
+`~/projects/jev/s2ygWn-SPWBDHupm.mp4` (32.7s): input with a clear button, the
+pile, the fly-up row, the fall-back. Same three queries. Nothing in it is
+missing here. **Note the URL bar in that video — `127.0.0.1:5174`. The
+reference is a localhost demo, never a deployed product**, so "go live" is not
+catching up to it. It is solving what a one-laptop demo never had to.
+
+**This task is a decision document, not an implementation.** Answer the five
+questions below and write the answers down; implement after.
+
+1. **Host.** The server binds `127.0.0.1` hard at `src/server.mts:202` and
+   reads `PORT` from the environment. A platform needs a `0.0.0.0` bind behind
+   its proxy — decide whether that is an env-driven branch or a config value,
+   and where `AI_GATEWAY_API_KEY` lives once it leaves `.env`.
+2. **Rate limiting. Treat as blocking.** The only guard today is
+   `MAX_CONCURRENT_SIFTS = 4` in `src/server.mts`, which is global, not
+   per-IP: four strangers saturate it, and one script bills the account
+   without ever exceeding it. Every accepted query is one Jev request of 101
+   score questions, ~14,780 tokens. Decide the per-IP window and what a
+   rejected caller sees. `MAX_BODY_BYTES` (4 KiB) already caps payload size;
+   it does not cap spend.
+3. **Idle-fire.** `IDLE_MS = 1200` in `web/app.js:242` fires a request 1200ms
+   after typing stops. Free while promotional pricing lasts, and that
+   **ends 2026-09-25** — three days after this was written, so check whether
+   it has already passed. Decide: keep it, raise it, or require an explicit
+   submit.
+4. **Spend ceiling.** No cost cap exists anywhere. Set a hard monthly limit at
+   the Gateway before the first public request, independent of whatever
+   rate limiting lands.
+5. **Whether to launch at all yet.** Two benches on 2026-09-22 lost 4 of 10
+   and 2 of 10 queries to Jev 503s, each after six attempts, with responses
+   from 1.3s to 68s. At that rate a real share of visitors meets an error or a
+   minute-long wait, and no amount of work here fixes an upstream single
+   provider with `fallbacksAvailable: []`. A loading state and an honest error
+   path are the minimum; waiting for Jev to stabilise is a legitimate answer.
+
+Recommendation: answer 5 first. If the answer is "not yet", 1–4 can wait and
+this item goes back to dormant with that decision recorded.
+
+### 2. `ubuntu-latest` migrates to Ubuntu 26 from 2026-10-19
 
 A dated watch item, not a task: the build is version-agnostic and the only
 annotation left on a green run is this notice. If CI breaks after that date,
@@ -141,17 +182,11 @@ The Node 20 deprecation that sat here is fixed. `actions/checkout@v7`,
 `actions/setup-node@v7` and `pnpm/action-setup@v6` as of `8eb70cf`, verified
 by the warning disappearing from run #4, not by the run merely passing.
 
-### 2. Deployment, if it ever goes public
-
-The server is loopback-only and has no auth or rate limiting beyond a
-concurrency cap. Before exposing it: per-IP limits, and decide whether
-idle-fire (1200ms) is affordable once Jev is paid.
-
-The 68s response measured on 2026-09-22 matters here: four browser retries
-behind a response that slow is far past any reasonable wait.
-
 ## Kickoff prompt for the next session
 
 > Read HANDOFF.md and LEARNINGS.md in ~/projects/emoji-sift. Run `pnpm run
-> check` to confirm the tree is green, then `pnpm run bench` to see where the
-> model stands today. The next task is <pick one from What's LEFT>.
+> check` to confirm the tree is green, then `pnpm run bench` — today's 503
+> rate and response times are evidence for question 5 below, so record what
+> you see. Then work What's LEFT item 1: scope the deployment. It is a
+> decision document, not an implementation. Start at question 5, because a
+> "not yet" makes the other four moot.
