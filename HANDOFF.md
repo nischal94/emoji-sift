@@ -259,6 +259,31 @@ Queries that show why the model is needed, because keyword search cannot do
 them: `things a magnet could attract`, `i need to lose weight`,
 `things you can wear`, `start a band`.
 
+**OPEN DECISION — invert `?clean` to `?debug`.** Raised 2026-09-22 by the
+user ("do we really need this line?"), recommended, not yet decided.
+
+The status line is three things sharing one element: a loading state
+(`sifting…`, `still sifting`, errors), a result count (`5 of 101`), and a
+latency figure (`4583ms`). Only the first is load-bearing for a user. The
+last advertises how slow the model was to someone who never asked, and on a
+bad day it prints 35 seconds under the result.
+
+The proposal is to flip the default: no count and no timing unless `?debug`
+is passed, with loading states and errors always visible. The mechanism
+already exists — it is the same body class, with the condition reversed —
+so this is a small change whose only real question is which default is
+right.
+
+**Do not just reformat the milliseconds into seconds.** That was considered
+and rejected: `4.6s` is prettier than `4583ms` and is the same diagnostic in
+a nicer font.
+
+**The constraint that shapes any version of this:** the element carries
+`role="status" aria-live="polite"` and the emoji row is `aria-hidden`, so
+this line is the ONLY thing a screen reader has to learn that anything
+matched. Whatever the visual default becomes, the count must keep reaching
+the accessibility tree — clip it, never `display: none`.
+
 **Record with `?clean`, in a light-mode browser.** Two things differ from the
 reference otherwise:
 
