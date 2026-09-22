@@ -227,6 +227,60 @@ reader does not redo the reasoning:
 
 ## What's LEFT
 
+### 0. LIVE — demo video, and a local reliability check first
+
+Added 2026-09-22 at the user's request, and it reorders what follows. The goal
+is now a recorded demo of the working app, with deployment after it rather
+than before.
+
+**The next action belongs to the user, and an agent cannot do it:**
+`pnpm run dev`, then type queries at http://127.0.0.1:5174. The server needs
+`AI_GATEWAY_API_KEY` from `.env`, which the sandbox denies reading, so an
+agent cannot start it or see the result.
+
+What the run answers, in one pass:
+
+- **Does it work today** — the feature is finished and tested, but no agent
+  has seen it against live Jev this session.
+- **Is it fast enough to film** — responses measured 1.3s to 68s on 2026-09-22.
+  A 68s wait ruins a take. A recording needs the fast end.
+- **Is deploying worth it this week** — this is the same evidence item 1 is
+  waiting on, gathered from the browser instead of `pnpm run bench`.
+
+Queries that show why the model is needed, because keyword search cannot do
+them: `things a magnet could attract`, `i need to lose weight`,
+`things you can wear`, `start a band`.
+
+**Then, in order:** record if it is responsive → decide deployment with item 1
+reopened → the deployment work itself, already scoped in DEPLOYMENT.md.
+
+If it stalls or errors repeatedly, that is item 1's "not yet" confirmed from a
+second direction, and the video waits for Jev rather than for code. Record the
+observed speed and failure rate in DEPLOYMENT.md either way; it is the same
+measurement the reopen trigger asks for.
+
+**Context the next session will not otherwise have:** `~/projects/jev` holds
+the Jev starter (`index.mts`) and `s2ygWn-SPWBDHupm.mp4`. That starter asks
+three questions about one support ticket; emoji-sift asks one score question
+about each of 101 emoji. Same `experimental_evaluate` API, different shape —
+the fan-out is what makes one request rank the whole pile.
+
+**The video is a recording of THIS app, not a reference to match.** 33s,
+3620x2160, 60fps, no audio track. Verified by extracting frames: the browser
+is on `127.0.0.1:5174`, and it shows `things you can wear` returning ring,
+headphones, scarf, gloves, sunglasses, boot, jeans, glove, top hat, crown;
+`i need to lose weight` returning rice, apple, banana, strawberry, broccoli,
+avocado, carrot; `things a magnet could attract` being typed; and the final
+frame catching the fall-back animation mid-flight after a clear. **The target
+is already met** — the remaining work is a new recording, not new behaviour.
+
+**An agent CAN read a video here.** `ffmpeg`/`ffprobe` are on PATH:
+`ffprobe` for the properties, then
+`ffmpeg -i <file> -vf "fps=1/3,scale=1200:-1" frames/f_%02d.png` into the
+scratchpad, then Read each frame. Check for an audio stream first — this one
+has none, so transcription would have returned nothing. Do not tell the user
+a local video cannot be watched.
+
 ### 1. DORMANT — deployment, decided against for now
 
 **Answered 2026-09-22 in [DEPLOYMENT.md](DEPLOYMENT.md). Not launching yet.**
