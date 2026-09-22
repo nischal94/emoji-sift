@@ -49,7 +49,7 @@ pushes (`.claude/settings.json` denies it).
 | UI | Input, row, pile. Fly-up and fall-back both land at 0px error |
 | Acceptance set | 10 queries. Last run **8 passed / 0 failed / 2 unavailable** |
 | Tests | 55 passing. Typecheck and lint clean |
-| CI | **Green.** `.github/workflows/ci.yml`, ~45s on `ubuntu-latest`, no warnings |
+| CI | **Green**, 9 of 9 runs. `.github/workflows/ci.yml`, ~30s on `ubuntu-latest`, no warnings |
 
 ### How to run it
 
@@ -94,10 +94,35 @@ pnpm run sift "things you can wear"
 - Server with the key held server-side, body cap, concurrency cap, abort
   plumbed through so a cancelled keystroke stops the upstream call
 - Fly-up and fall-back animation, both verified at 0px landing error
-- 43 tests, each written against a defect that actually occurred
+- 55 tests, each written against a defect that actually occurred
 - Acceptance set with `must` / `mustNot` / `outranks`
-- Two audits and one external review, all findings closed
+- Two audits and two external reviews, all findings closed
 - CI on push and PR, verified green on a clean runner
+
+### The second external review (2026-09-22), all four findings fixed
+
+Each was reproduced before being accepted and verified after. Details and the
+reasoning are in LEARNINGS.
+
+- **Cancellation was wired to an event that never fires.** The handler
+  listened for `close` on the request after reading its body, by which point
+  that object is already complete — so a cancelled fetch still ran and billed
+  a full 101-question evaluation. Now `res.on('close')` guarded by
+  `!res.writableEnded`, in `src/disconnect.ts`, with two integration tests
+  that go red against the old implementation.
+- **Same-origin serving was not a spending boundary.** A cross-origin
+  `text/plain` POST is a simple request, so the browser sent it with no
+  preflight: the attacker could not read the reply, but the model call billed.
+  Now `src/request-guard.ts` requires `application/json` (not a
+  simple-request type, so it forces a preflight CORS blocks) and rejects a
+  foreign `Origin`.
+- **A concluded experiment left a bypass switch.** `SIFT_PROMPT=repeated`
+  reverted the prompt-injection boundary, and the test guarding it failed
+  whenever that variable was set. The switch, the type and the old builder are
+  gone, so the boundary is structural. Verified by running the suite with the
+  variable set.
+- **Four documentation claims had outlived the code**, including one in a test
+  comment the review did not list.
 
 ## The acceptance set, after the 2026-09-22 sweep
 
@@ -145,10 +170,11 @@ catching up to it. It is solving what a one-laptop demo never had to.
 **This task is a decision document, not an implementation.** Answer the five
 questions below and write the answers down; implement after.
 
-1. **Host.** The server binds `127.0.0.1` hard at `src/server.mts:202` and
-   reads `PORT` from the environment. A platform needs a `0.0.0.0` bind behind
-   its proxy — decide whether that is an env-driven branch or a config value,
-   and where `AI_GATEWAY_API_KEY` lives once it leaves `.env`.
+1. **Host.** The `server.listen` call at the bottom of `src/server.mts` binds
+   `127.0.0.1` hard, and `PORT` comes from the environment. A platform needs a
+   `0.0.0.0` bind behind its proxy — decide whether that is an env-driven
+   branch or a config value, and where `AI_GATEWAY_API_KEY` lives once it
+   leaves `.env`.
 2. **Rate limiting. Treat as blocking.** The only guard today is
    `MAX_CONCURRENT_SIFTS = 4` in `src/server.mts`, which is global, not
    per-IP: four strangers saturate it, and one script bills the account
@@ -161,8 +187,8 @@ questions below and write the answers down; implement after.
    requires `application/json` and rejects a foreign `Origin`, so another
    site cannot spend the key from a visitor's browser. A direct client such
    as a script is unaffected by that and is what per-IP limiting is for.
-3. **Idle-fire.** `IDLE_MS = 1200` in `web/app.js:242` fires a request 1200ms
-   after typing stops. Free while promotional pricing lasts, and that
+3. **Idle-fire.** `IDLE_MS` in `web/app.js` fires a request 1200ms after
+   typing stops. Free while promotional pricing lasts, and that
    **ends 2026-09-25** — three days after this was written, so check whether
    it has already passed. Decide: keep it, raise it, or require an explicit
    submit.
