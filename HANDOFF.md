@@ -33,7 +33,7 @@ doing the judging is `typesafe-ai/jev` through Vercel AI Gateway.
 ## Current state (2026-09-22)
 
 Working end to end. Public at https://github.com/nischal94/emoji-sift,
-head `48f6b48` on `main`.
+head `8eb70cf` on `main`.
 
 **Pushing to `main` is blocked by a global hook.** A push needs
 `ALLOW_MAIN_PUSH=1 git push` run by the user; the agent commits but never
@@ -47,7 +47,7 @@ pushes (`.claude/settings.json` denies it).
 | UI | Input, row, pile. Fly-up and fall-back both land at 0px error |
 | Acceptance set | 10 queries. Last run **6 passed / 0 failed / 4 unavailable** |
 | Tests | 43 passing. Typecheck and lint clean |
-| CI | **Green.** `.github/workflows/ci.yml`, ~21s on `ubuntu-latest` |
+| CI | **Green.** `.github/workflows/ci.yml`, ~45s on `ubuntu-latest`, no warnings |
 
 ### How to run it
 
@@ -78,6 +78,11 @@ pnpm run sift "things you can wear"
   load should drop.
 - **An agent cannot run `pnpm run bench`.** It needs the key in `.env`, which
   the sandbox denies reading. A person runs it and pastes the output.
+- **An agent CAN read CI itself** through the built-in browser at
+  `github.com/nischal94/emoji-sift/actions` — the repo is public, so no
+  credential is involved. `gh` is blocked (its config holds the token) but
+  that blocks the CLI, not the information. See LEARNINGS for the full list of
+  what needs handing over and what does not.
 
 ## What's DONE
 
@@ -103,14 +108,15 @@ The control query, "instruments you could play in a band", was one of the four
 503s, so the other half is unverified. Run `pnpm run bench` until that query
 completes. If 🔑 stays below the floor there too, delete this item.
 
-### 2. Action versions in CI are on deprecated Node 20
+### 2. `ubuntu-latest` migrates to Ubuntu 26 from 2026-10-19
 
-GitHub force-runs `actions/checkout@v4`, `actions/setup-node@v4` and
-`pnpm/action-setup@v4` on Node 24 and warns. Nothing breaks today. Bump to
-`@v5` for checkout and setup-node when convenient.
+A dated watch item, not a task: the build is version-agnostic and the only
+annotation left on a green run is this notice. If CI breaks after that date,
+pin `runs-on: ubuntu-24.04` and investigate from a working build.
 
-Related and dated: **`ubuntu-latest` migrates to Ubuntu 26 from 2026-10-19.**
-The build is version-agnostic, so this is a watch item, not a task.
+The Node 20 deprecation that sat here is fixed. `actions/checkout@v7`,
+`actions/setup-node@v7` and `pnpm/action-setup@v6` as of `8eb70cf`, verified
+by the warning disappearing from run #4, not by the run merely passing.
 
 ### 3. Deployment, if it ever goes public
 

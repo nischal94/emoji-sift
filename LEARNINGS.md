@@ -193,3 +193,45 @@ row. 38 tests, a 10-query acceptance set at 9 passed / 0 failed.
   boundaries to hand to the user, not obstacles to route around.
 - **Availability got worse, not better.** 4 of 10 queries lost to 503s after
   six attempts each, and one success took 68s against 1.3s for the same work.
+
+### What an agent in this repo can and cannot do
+
+Written after a session spent handing the user commands that the agent could
+have run itself. "The CLI is blocked" is not the same as "I cannot see it":
+check for a second route before declaring a task impossible.
+
+**Can do, unaided:**
+
+- Read CI results, run logs and annotations through the built-in browser.
+  The repo is public, so `https://github.com/<owner>/<repo>/actions` needs no
+  credential. Find a run by its commit subject, then open it for the
+  Status line and the Annotations block. This is the supported way to watch a
+  workflow; `gh run watch` is not available to the agent.
+- Run `tsc`, `eslint` and `node --test` directly from `node_modules/.bin/`.
+  `pnpm` itself is aliased to `sfw pnpm` in the user's shell and dies under
+  the sandbox on a CA key, so the package-manager wrapper is unusable while
+  the tools underneath are not.
+- Run `node src/cli.mts` and `node src/server.mts` for real (unsandboxed) to
+  prove the entry points still start. A typecheck never loads them.
+- All ordinary git reads and writes except `push`.
+
+**Cannot do, and must hand over:**
+
+- `gh` anything — its config holds the GitHub token.
+- `curl` to api.github.com — network policy.
+- Write `.github/workflows/**` — a workflow executes with repository
+  credentials outside the sandbox. Writing the file elsewhere for the user to
+  move is defeating the guard, not satisfying it.
+- `pnpm run bench` — needs the key in `.env`, which is unreadable.
+- `git push` — denied in `.claude/settings.json`; needs `ALLOW_MAIN_PUSH=1`.
+
+**`gh run watch` is not a verification step even for the user.** It prints
+`found no in progress runs to watch` both when a run has not registered yet
+and when it has already finished — the same output for opposite states. Read
+the stored conclusion instead (`gh run list`, or the browser).
+
+**`src/env.test.ts` fails inside the agent sandbox and that is not a defect.**
+Three cases end in `EPERM: operation not permitted, unlink '…/.env'` — the
+sandbox refuses to delete any file named `.env`, including ones the test just
+created in a temp directory. The assertions pass; the cleanup is what fails.
+Run them unsandboxed, or trust CI, which runs the same 43 on Ubuntu.
